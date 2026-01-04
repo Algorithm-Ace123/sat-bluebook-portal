@@ -4,6 +4,7 @@ require('dotenv').config({ path: '.env.local' });
 const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY",
   // service role key is optional for non-admin functionality
 ];
 

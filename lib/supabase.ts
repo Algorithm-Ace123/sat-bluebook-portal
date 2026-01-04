@@ -6,12 +6,18 @@ import { cookies } from "next/headers";
  * Dynamically imports @supabase/ssr to avoid bundling Node-only APIs into Edge runtime.
  */
 export async function supabaseServer() {
+    const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!URL || !KEY) {
+        throw new Error(`Missing required env vars:${!URL? ' NEXT_PUBLIC_SUPABASE_URL':''}${!KEY? ', NEXT_PUBLIC_SUPABASE_ANON_KEY':''}. Add them to Vercel and run ` + "`npm run check:env`.");
+    }
+
     const { createServerClient } = await import("@supabase/ssr");
     const cookieStore = cookies();
 
     return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        URL,
+        KEY,
         {
             cookies: {
                 get(name: string) {
@@ -38,4 +44,4 @@ export async function supabaseServer() {
             }
         }
     );
-}
+} 
