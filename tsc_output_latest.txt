@@ -1,0 +1,16 @@
+components/TestRunner.tsx(4,19): error TS7016: Could not find a declaration file for module 'katex'. 'D:/sat-bluebook-portal/node_modules/katex/dist/katex.js' implicitly has an 'any' type.
+  There are types at 'D:/sat-bluebook-portal/node_modules/katex/types/katex.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
+components/TestRunner.tsx(754,37): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(766,55): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(802,27): error TS2339: Property 'section' does not exist on type 'Step'.
+  Property 'section' does not exist on type '{ kind: "break"; label: string; timeLimitSec: number; }'.
+components/TestRunner.tsx(806,66): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(809,28): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(809,58): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(809,78): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(815,22): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(816,26): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(817,54): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(829,56): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(874,22): error TS18047: 'q' is possibly 'null'.
+components/TestRunner.tsx(884,52): error TS18047: 'q' is possibly 'null'.

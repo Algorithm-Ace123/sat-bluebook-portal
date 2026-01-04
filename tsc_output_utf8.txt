@@ -1,0 +1,4 @@
+components/TestRunner.tsx(4,19): error TS7016: Could not find a declaration file for module 'katex'. 'D:/sat-bluebook-portal/node_modules/katex/dist/katex.js' implicitly has an 'any' type.
+  There are types at 'D:/sat-bluebook-portal/node_modules/katex/types/katex.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
+components/TestRunner.tsx(737,106): error TS2322: Type '{ open: boolean; onClose: () => void; url: string | undefined; }' is not assignable to type 'IntrinsicAttributes & { open: boolean; onClose: () => void; }'.
+  Property 'url' does not exist on type 'IntrinsicAttributes & { open: boolean; onClose: () => void; }'.
