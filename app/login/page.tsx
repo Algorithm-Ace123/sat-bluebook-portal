@@ -34,6 +34,34 @@ export default function LoginPage() {
             return;
         }
 
+        // Persist session to server cookies so server-side routing and middleware can detect it
+        try {
+            const resp = await fetch('/api/auth/set-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    access_token: data.session?.access_token,
+                    refresh_token: data.session?.refresh_token,
+                    expires_at: data.session?.expires_at,
+                    session: data.session
+                })
+            });
+
+            const json = await resp.json();
+            if (!resp.ok || !json.ok) {
+                console.error('Failed to persist session on server:', json);
+                setErr('Logged in, but failed to persist session. Try again or contact admin.');
+                setLoading(false);
+                return;
+            }
+        } catch (err) {
+            console.error('set-session fetch error', err);
+            setErr('Logged in, but failed to persist session. Try again or contact admin.');
+            setLoading(false);
+            return;
+        }
+
         // Fetch profile role and route accordingly
         const { data: profile, error: pErr } = await supabase
             .from("profiles")
