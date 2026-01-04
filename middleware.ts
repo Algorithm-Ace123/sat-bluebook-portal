@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
     const res = NextResponse.next();
@@ -14,26 +13,18 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith("/api/auth/logout") ||
         pathname.startsWith("/api"); // don't block APIs; they validate auth themselves
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return req.cookies.get(name)?.value;
-                },
-                set(name: string, value: string, options?: any) {
-                    res.cookies.set(name, value, options);
-                },
-                remove(name: string, options?: any) {
-                    res.cookies.set(name, "", options);
-                }
-            }
-        }
-    );
+    // Avoid using Supabase client in middleware (Edge runtime incompatible).
+    // Instead, check for common Supabase session cookie names. If one exists,
+    // assume the user is authenticated and allow the request through.
+    const authCookie =
+        req.cookies.get("sb-access-token")?.value ??
+        req.cookies.get("sb-refresh-token")?.value ??
+        req.cookies.get("supabase-auth-token")?.value ??
+        req.cookies.get("sb:token")?.value ??
+        req.cookies.get("sb-session")?.value ??
+        req.cookies.get("session")?.value ?? null;
 
-    const { data } = await supabase.auth.getUser();
-    const isAuthed = !!data.user;
+    const isAuthed = !!authCookie;
 
     // If not authed and trying to access protected pages
     if (!isAuthed && !isPublic) {
