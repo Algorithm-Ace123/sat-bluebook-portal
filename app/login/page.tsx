@@ -103,6 +103,19 @@ export default function LoginPage() {
             return;
         }
 
+        // Respect the `next` query param if present and safe
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const next = params.get('next');
+            if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) {
+                // Prevent open redirect; ensure path only
+                window.location.href = next;
+                return;
+            }
+        } catch (e) {
+            // ignore and fall back to role routing
+        }
+
         if (profile.role === "teacher") {
             window.location.href = "/teacher";
         } else {
