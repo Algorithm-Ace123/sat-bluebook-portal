@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { supabaseBrowser } from "../../lib/supabase-browser";
 
 export default function LoginPage() {
-    const supabase = useMemo(() => supabaseBrowser(), []);
-
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -16,6 +14,8 @@ export default function LoginPage() {
         e.preventDefault();
         setErr(null);
         setLoading(true);
+
+        const supabase = supabaseBrowser();
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
