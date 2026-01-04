@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import InlineLogo from "../../components/InlineLogo";
 import { supabaseBrowser } from "../../lib/supabase-browser";
 
 export default function LoginPage() {
@@ -17,14 +18,19 @@ export default function LoginPage() {
 
         const supabase = await supabaseBrowser();
 
+        const normalizedEmail = email.trim().toLowerCase();
+
         const { data, error } = await supabase.auth.signInWithPassword({
-            email,
+            email: normalizedEmail,
             password
         });
 
+        console.debug('Sign-in result', { data, error });
+
         if (error || !data.user) {
             setLoading(false);
-            setErr(error?.message ?? "Login failed.");
+            console.error('Login error details:', error);
+            setErr(error?.message ?? "Login failed. Check your email/password or contact your admin.");
             return;
         }
 
@@ -64,7 +70,7 @@ export default function LoginPage() {
 
             <div className="w-full max-w-md relative z-10">
                 <div className="mb-10 flex flex-col items-center">
-                    <img src="/logo.png" alt="Pramana Logo" className="h-16 mb-4 drop-shadow-2xl" />
+                    <InlineLogo className="h-16 mb-4 drop-shadow-2xl" />
                     <h1 className="text-3xl font-black text-white tracking-tight">Pramana</h1>
                     <div className="h-1 w-12 bg-blue-500 rounded-full mt-2" />
                 </div>

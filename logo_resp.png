@@ -1,0 +1,12 @@
+HTTP/1.1 307 Temporary Redirect
+Cache-Control: public, max-age=0, must-revalidate
+Content-Type: text/plain
+Date: Sun, 04 Jan 2026 19:24:48 GMT
+Location: /login?next=%2Flogo.png
+Server: Vercel
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Robots-Tag: noindex
+X-Vercel-Id: bom1::wg74l-1767554688598-e7474efa53a1
+Transfer-Encoding: chunked
+
+Redirecting...

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InlineLogo from "../../components/InlineLogo";
 import { supabaseServer } from "../../lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -103,7 +104,7 @@ export default async function StudentPage() {
             <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
                 <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/logo.png" alt="Logo" className="h-8" />
+                        <InlineLogo className="h-8" />
                         <span className="text-xl font-black text-slate-900 tracking-tight">Pramana</span>
                     </div>
                     <div className="flex items-center gap-6">
