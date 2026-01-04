@@ -4,7 +4,21 @@ import { supabaseServer } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 export default async function TeacherTestsPage() {
-    const supabase = await supabaseServer();
+    let supabase: any;
+    try {
+        supabase = await supabaseServer();
+    } catch (err) {
+        console.error('Supabase init error in TeacherTestsPage:', err);
+        return (
+            <div className="min-h-screen p-6">
+                <div className="max-w-xl mx-auto rounded-2xl bg-white border p-6">
+                    <h1 className="text-xl font-semibold">Service temporarily unavailable</h1>
+                    <p className="text-sm text-slate-600 mt-2">We’re having trouble connecting to our backend. Please try again later.</p>
+                </div>
+            </div>
+        );
+    }
+
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) return null;
 
