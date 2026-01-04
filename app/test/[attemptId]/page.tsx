@@ -2,6 +2,8 @@ import { supabaseServer } from "../../../lib/supabase";
 import TestRunner from "../../../components/TestRunner";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function AttemptPage({ params }: { params: { attemptId: string } }) {
     const supabase = supabaseServer();
 

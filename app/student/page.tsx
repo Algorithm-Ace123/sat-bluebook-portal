@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabaseServer } from "../../lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 import { calculateSectionScore } from "@/lib/scoring";
 
 export default async function StudentPage() {

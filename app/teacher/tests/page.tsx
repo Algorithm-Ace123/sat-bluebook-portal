@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeacherTestsPage() {
     const supabase = supabaseServer();
     const { data: user } = await supabase.auth.getUser();

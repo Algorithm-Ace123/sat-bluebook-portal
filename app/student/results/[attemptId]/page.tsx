@@ -8,6 +8,8 @@ import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { calculateSectionScore, inferRoute, Route } from "@/lib/scoring";
 
+export const dynamic = "force-dynamic";
+
 /**
  * FIXED RESULTS PAGE
  * 
