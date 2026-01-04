@@ -3,7 +3,7 @@ import { supabaseServer } from "../../../../lib/supabase";
 import { TestJsonSchema } from "../../../../lib/schema";
 
 export async function POST(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
 
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {

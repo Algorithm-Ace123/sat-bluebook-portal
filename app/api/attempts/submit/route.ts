@@ -4,7 +4,7 @@ import { calculateSectionScore } from "@/lib/scoring";
 
 export async function POST(req: Request) {
     try {
-        const supabase = supabaseServer();
+        const supabase = await supabaseServer();
         const body = await req.json();
         const { attemptId } = body;
 

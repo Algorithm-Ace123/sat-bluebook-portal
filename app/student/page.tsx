@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 import { calculateSectionScore } from "@/lib/scoring";
 
 export default async function StudentPage() {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return null;
 

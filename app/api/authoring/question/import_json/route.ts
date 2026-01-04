@@ -4,7 +4,7 @@ import { normalizeQuestionJSON } from "@/lib/normalizeQuestion";
 import { ModuleKeySchema, AuthoringQuestionSchema } from "@/lib/authoring";
 
 export async function POST(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

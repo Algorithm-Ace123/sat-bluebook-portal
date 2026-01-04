@@ -4,7 +4,7 @@ import { supabaseServer } from "../lib/supabase";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data } = await supabase.auth.getUser();
 
     if (!data.user) redirect("/login");

@@ -23,7 +23,7 @@ async function findUserIdByEmail(admin: any, email: string): Promise<string | nu
 }
 
 export async function POST(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
 
     // Auth check
     const { data: userData } = await supabase.auth.getUser();

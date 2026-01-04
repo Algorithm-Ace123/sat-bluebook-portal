@@ -10,7 +10,7 @@ function one<T>(v: T | T[] | null | undefined): T | null {
 }
 
 export async function GET(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

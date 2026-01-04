@@ -1,12 +1,12 @@
 // lib/supabase.ts
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-
 
 /**
  * Client for server (server components + route handlers)
+ * Dynamically imports @supabase/ssr to avoid bundling Node-only APIs into Edge runtime.
  */
-export function supabaseServer() {
+export async function supabaseServer() {
+    const { createServerClient } = await import("@supabase/ssr");
     const cookieStore = cookies();
 
     return createServerClient(

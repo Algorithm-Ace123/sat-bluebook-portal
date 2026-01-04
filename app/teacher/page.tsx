@@ -4,7 +4,7 @@ import { supabaseServer } from "../../lib/supabase";
 export const dynamic = "force-dynamic";
 
 export default async function TeacherPage() {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return null;
 

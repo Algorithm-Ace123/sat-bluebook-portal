@@ -9,7 +9,7 @@ function moduleLabel(moduleKey: string) {
 }
 
 export async function POST(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

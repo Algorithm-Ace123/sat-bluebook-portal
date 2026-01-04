@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function AttemptPage({ params }: { params: { attemptId: string } }) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
 
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return null;

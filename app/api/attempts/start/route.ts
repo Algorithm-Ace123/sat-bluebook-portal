@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "../../../../lib/supabase";
 
 export async function POST(req: Request) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
 
     const form = await req.formData();
     const assignmentId = String(form.get("assignmentId") || "");

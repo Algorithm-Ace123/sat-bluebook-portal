@@ -89,7 +89,7 @@ function toFractionLatex(v: string) {
 }
 
 export default async function ResultsPage({ params }: { params: { attemptId: string } }) {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
     const { attemptId } = params;
 
     const { data: userData } = await supabase.auth.getUser();
