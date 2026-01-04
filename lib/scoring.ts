@@ -52,38 +52,89 @@ function clamp(n: number, lo: number, hi: number) {
 }
 
 /**
- * Routing logic: Maintains high standards but remains consistent.
+ * Digital SAT scoring support (strict mapping by default)
+ *
+ * To increase accuracy for the new Digital SAT, we use anchor-based
+ * piecewise-linear conversion tables that are monotonic and tuned to
+ * be slightly strict (e.g., RW 46/54 => ~680). We expose a simple mode
+ * parameter so legacy mappings can still be used if necessary.
  */
-export function inferRoute(mod: any, m1Correct?: number, section?: "RW" | "MATH"): Route {
-    const id = String(mod?.id ?? "").toLowerCase();
-    const label = String(mod?.label ?? "").toLowerCase();
 
-    if (id.includes("hard") || label.includes("hard")) return "hard";
-    if (id.includes("easy") || label.includes("easy")) return "easy";
+// Helpers to build lookup tables from anchor points
+function buildLookup(maxRaw: number, anchors: { raw: number; score: number }[]) {
+    const table = new Array(maxRaw + 1).fill(200);
 
-    if (m1Correct !== undefined && section) {
-        if (section === "RW") return m1Correct >= 18 ? "hard" : "easy";
-        if (section === "MATH") return m1Correct >= 14 ? "hard" : "easy";
+    // Sort anchors
+    anchors = anchors.slice().sort((a, b) => a.raw - b.raw);
+
+    // Ensure endpoints
+    if (anchors[0].raw > 0) anchors.unshift({ raw: 0, score: anchors[0].score });
+    if (anchors[anchors.length - 1].raw < maxRaw) anchors.push({ raw: maxRaw, score: anchors[anchors.length - 1].score });
+
+    let ai = 0;
+    for (let r = 0; r <= maxRaw; r++) {
+        while (ai < anchors.length - 1 && r > anchors[ai + 1].raw) ai++;
+        const a = anchors[ai];
+        const b = anchors[ai + 1];
+        if (!b) {
+            table[r] = a.score;
+            continue;
+        }
+        const span = b.raw - a.raw;
+        const t = span === 0 ? 0 : (r - a.raw) / span;
+        const val = Math.round(a.score + t * (b.score - a.score));
+        table[r] = clamp(val, 200, 800);
     }
 
-    return "hard";
+    // Guarantee monotonicity
+    for (let i = 1; i <= maxRaw; i++) table[i] = Math.max(table[i - 1], table[i]);
+
+    return table;
 }
+
+// Digital SAT anchor points tuned to be slightly strict
+const RW_DIGITAL = buildLookup(54, [
+    { raw: 0, score: 200 },
+    { raw: 10, score: 300 },
+    { raw: 20, score: 420 },
+    { raw: 30, score: 540 },
+    { raw: 40, score: 600 },
+    { raw: 46, score: 680 }, // Strict mapping: 46 -> ~680
+    { raw: 50, score: 740 },
+    { raw: 54, score: 800 }
+]);
+
+const MATH_DIGITAL = buildLookup(44, [
+    { raw: 0, score: 200 },
+    { raw: 6, score: 300 },
+    { raw: 12, score: 380 },
+    { raw: 20, score: 480 },
+    { raw: 30, score: 600 },
+    { raw: 36, score: 700 },
+    { raw: 40, score: 740 },
+    { raw: 44, score: 800 }
+]);
+
+export type ScoreMode = "digital" | "legacy-hard" | "legacy-easy";
 
 export function calculateSectionScore(
     m1Correct: number,
     m1Total: number,
     m2Correct: number,
     m2Total: number,
-    section: "RW" | "MATH" = "RW"
+    section: "RW" | "MATH" = "RW",
+    mode: ScoreMode = "digital"
 ): number {
     const rawTotal = m1Correct + m2Correct;
-    const isHard = inferRoute(null, m1Correct, section) === "hard";
-
     if (section === "RW") {
         const r = clamp(rawTotal, 0, 54);
+        if (mode === "digital") return RW_DIGITAL[r];
+        const isHard = inferRoute(null, m1Correct, section) === "hard";
         return isHard ? RW_HARD[r] : RW_EASY[r];
     } else {
         const r = clamp(rawTotal, 0, 44);
+        if (mode === "digital") return MATH_DIGITAL[r];
+        const isHard = inferRoute(null, m1Correct, section) === "hard";
         return isHard ? MATH_HARD[r] : MATH_EASY[r];
     }
 }
