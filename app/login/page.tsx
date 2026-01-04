@@ -51,15 +51,35 @@ export default function LoginPage() {
             const json = await resp.json();
             if (!resp.ok || !json.ok) {
                 console.error('Failed to persist session on server:', json);
+                // Fallback: set non-HttpOnly cookies client-side so middleware and server see them
+                try {
+                    const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
+                        ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
+                        : 60 * 60;
+                    document.cookie = `sb-access-token=${data.session?.access_token}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                    document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                } catch (err) {
+                    console.error('Client-side cookie fallback failed', err);
+                    setErr('Logged in, but failed to persist session. Try again or contact admin.');
+                    setLoading(false);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('set-session fetch error', err);
+            // Fallback to client-side cookie persistence
+            try {
+                const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
+                    ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
+                    : 60 * 60;
+                document.cookie = `sb-access-token=${data.session?.access_token}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+            } catch (err2) {
+                console.error('Client-side cookie fallback failed', err2);
                 setErr('Logged in, but failed to persist session. Try again or contact admin.');
                 setLoading(false);
                 return;
             }
-        } catch (err) {
-            console.error('set-session fetch error', err);
-            setErr('Logged in, but failed to persist session. Try again or contact admin.');
-            setLoading(false);
-            return;
         }
 
         // Fetch profile role and route accordingly
