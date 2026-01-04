@@ -51,7 +51,7 @@ export default async function StudentPage() {
         .eq("student_id", userData.user.id);
 
     const attemptsMap = new Map();
-    (attempts || []).forEach(a => attemptsMap.set(a.assignment_id, a));
+    (attempts || []).forEach((a: any) => attemptsMap.set(a.assignment_id, a));
 
     const getScaledScore = (attempt: any, testJson: any) => {
         if (!attempt || !testJson) return 400;

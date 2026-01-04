@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
         const answersMap = new Map();
         // First, load from DB
-        (savedAnswers || []).forEach(row => {
+        (savedAnswers || []).forEach((row: any) => {
             answersMap.set(row.question_id, row.answer);
         });
         // Then, override with body answers (the latest sync state from frontend)

@@ -9,9 +9,28 @@ import { createServerClient } from "@supabase/ssr";
 export function supabaseServer() {
     const cookieStore = cookies();
 
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    // If env vars are missing (e.g., in a preview environment without secrets),
+    // return a safe fallback client that treats the user as unauthenticated
+    // and prevents runtime crashes when server pages are executed.
+    if (!url || !key) {
+        console.warn(
+            "Supabase env vars missing (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY). Returning fallback client."
+        );
+        return {
+            auth: {
+                getUser: async () => ({ data: { user: null } })
+            },
+            // Minimal `from` helper used by server pages; returns a no-op that yields null data
+            from: (_: string) => ({ select: async () => ({ data: null, error: null }) })
+        } as any;
+    }
+
     return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        url,
+        key,
         {
             cookies: {
                 get(name: string) {
