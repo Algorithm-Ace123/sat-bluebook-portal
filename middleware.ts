@@ -18,16 +18,13 @@ export async function middleware(req: NextRequest) {
         pathname.endsWith(".ico") ||
         pathname.endsWith(".pdf");
 
-    // Avoid using Supabase client in middleware (Edge runtime incompatible).
-    // Instead, check for common Supabase session cookie names. If one exists,
-    // assume the user is authenticated and allow the request through.
+    // Check for auth cookies
     const authCookie =
         req.cookies.get("sb-access-token")?.value ??
         req.cookies.get("sb-refresh-token")?.value ??
-        req.cookies.get("supabase-auth-token")?.value ??
-        req.cookies.get("sb:token")?.value ??
         req.cookies.get("sb-session")?.value ??
-        req.cookies.get("session")?.value ?? null;
+        req.cookies.get("supabase-auth-token")?.value ??
+        null;
 
     const isAuthed = !!authCookie;
 
@@ -36,14 +33,15 @@ export async function middleware(req: NextRequest) {
         const url = req.nextUrl.clone();
         url.pathname = "/login";
         url.searchParams.set("next", pathname);
-        return NextResponse.redirect(url);
+        // Use 303 See Other logic if it was a POST to avoid 405 on /login
+        return NextResponse.redirect(url, { status: 303 });
     }
 
-    // If authed and tries /login, push them to /student (role routing is inside pages)
+    // If authed and tries /login, push them to /student
     if (isAuthed && pathname === "/login") {
         const url = req.nextUrl.clone();
         url.pathname = "/student";
-        return NextResponse.redirect(url);
+        return NextResponse.redirect(url, { status: 303 });
     }
 
     return res;

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const assignmentId = String(form.get("assignmentId") || "");
 
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return NextResponse.redirect(new URL("/login", req.url));
+    if (!userData.user) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
 
     // create attempt
     const { data: attempt, error } = await supabase

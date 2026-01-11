@@ -9,7 +9,7 @@ export async function supabaseServer() {
     const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!URL || !KEY) {
-        throw new Error(`Missing required env vars:${!URL? ' NEXT_PUBLIC_SUPABASE_URL':''}${!KEY? ', NEXT_PUBLIC_SUPABASE_ANON_KEY':''}. Add them to Vercel and run ` + "`npm run check:env`.");
+        throw new Error(`Missing required env vars:${!URL ? ' NEXT_PUBLIC_SUPABASE_URL' : ''}${!KEY ? ', NEXT_PUBLIC_SUPABASE_ANON_KEY' : ''}. Add them to Vercel and run ` + "`npm run check:env`.");
     }
 
     const { createServerClient } = await import("@supabase/ssr");
@@ -21,7 +21,13 @@ export async function supabaseServer() {
         {
             cookies: {
                 get(name: string) {
-                    return cookieStore.get(name)?.value;
+                    const val = cookieStore.get(name)?.value;
+                    if (val) return val;
+                    // Fallback to our manual cookie names if Supabase-SSR doesn't find its expected ones
+                    if (name.includes("auth-token")) {
+                        return cookieStore.get("sb-access-token")?.value;
+                    }
+                    return undefined;
                 },
                 set(name: string, value: string, options: any) {
                     try {
