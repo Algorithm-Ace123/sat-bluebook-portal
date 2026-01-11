@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import dynamicImport from 'next/dynamic';
 const LogoClient = dynamicImport(() => import('../../components/InlineLogo'), { ssr: false });
 import { supabaseServer } from "../../lib/supabase";
@@ -23,8 +24,10 @@ export default async function StudentPage() {
         );
     }
 
+    const cookieStore = cookies();
+    const cookieNames = cookieStore.getAll().map((c: any) => c.name).join(", ");
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log(`[StudentPage] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}`);
+    console.log(`[StudentPage] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}, Cookies: ${cookieNames}`);
     if (!userData.user) {
         console.warn("[StudentPage] No user found, showing nothing (expecting middleware redirect)");
         return null;

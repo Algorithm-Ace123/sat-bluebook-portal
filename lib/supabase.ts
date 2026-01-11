@@ -23,7 +23,25 @@ export async function supabaseServer() {
             cookies: {
                 get(name: string) {
                     const cookie = cookieStore.get(name);
-                    const val = cookie?.value;
+                    let val = cookie?.value;
+
+                    // Fallback logic for when the SDK asks for a project-specific cookie name
+                    // that we didn't explicitly set, or if it's looking for chunks.
+                    if (!val && (name.includes("auth-token") || name.includes("session"))) {
+                        // Check for our manually set tokens
+                        val = cookieStore.get("supabase-auth-token")?.value ??
+                            cookieStore.get("sb-access-token")?.value;
+
+                        if (val) {
+                            console.log(`[supabaseServer] FALLBACK FOUND for ${name} using ${val.includes("[") ? "SDK-styled" : "Raw"} token`);
+                            // If it's a raw token, wrap it to satisfy the SDK parser
+                            if (!val.startsWith("{") && !val.startsWith("[")) {
+                                const refreshToken = cookieStore.get("sb-refresh-token")?.value || null;
+                                val = JSON.stringify([val, refreshToken, null, null]);
+                            }
+                        }
+                    }
+
                     console.log(`[supabaseServer] get cookie: ${name}, found: ${!!val}`);
                     return val;
                 },

@@ -10,12 +10,13 @@ export async function GET(req: Request) {
     const cookieStore = cookies();
     const allCookies = cookieStore.getAll();
     allCookies.forEach(cookie => {
-        if (cookie.name.includes("-auth-token") || cookie.name.startsWith("sb-")) {
+        if (cookie.name.includes("-auth-token") || cookie.name.startsWith("sb-") || cookie.name.includes("supabase-auth-token")) {
             cookieStore.set({ name: cookie.name, value: '', path: '/', maxAge: 0 });
         }
     });
 
     // Explicit legacy clear
+    cookieStore.set({ name: 'supabase-auth-token', value: '', path: '/', maxAge: 0 });
     cookieStore.set({ name: 'sb-access-token', value: '', path: '/', maxAge: 0 });
     cookieStore.set({ name: 'sb-refresh-token', value: '', path: '/', maxAge: 0 });
     cookieStore.set({ name: 'sb-session', value: '', path: '/', maxAge: 0 });

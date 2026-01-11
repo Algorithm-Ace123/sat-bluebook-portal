@@ -22,11 +22,11 @@ export async function middleware(req: NextRequest) {
     const allCookies = req.cookies.getAll();
     const cookieNames = allCookies.map(c => c.name);
     const supabaseCookie = allCookies.find(c => c.name.includes("-auth-token"));
-
+    const manualSDKCookie = req.cookies.get("supabase-auth-token")?.value;
     const legacyAccessToken = req.cookies.get("sb-access-token")?.value;
     const legacySession = req.cookies.get("sb-session")?.value;
 
-    const isAuthed = !!(supabaseCookie || legacyAccessToken || legacySession);
+    const isAuthed = !!(supabaseCookie || manualSDKCookie || legacyAccessToken || legacySession);
 
     console.log(`[Middleware] ${req.method} ${pathname}`);
     console.log(`[Middleware] Cookies found: ${cookieNames.join(", ") || "NONE"}`);
