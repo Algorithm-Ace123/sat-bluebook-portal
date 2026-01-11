@@ -99,7 +99,7 @@ export default function LoginPage() {
         try {
             const params = new URLSearchParams(window.location.search);
             const next = params.get('next');
-            if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) {
+            if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') && next !== '/login') {
                 // Prevent open redirect; ensure path only
                 window.location.href = next;
                 return;

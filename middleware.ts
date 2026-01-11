@@ -47,14 +47,14 @@ export async function middleware(req: NextRequest) {
         console.log(`[Middleware] REDIRECT -> ${next || "/student"} (Already Authed)`);
         const url = req.nextUrl.clone();
 
-        if (next && next.startsWith("/")) {
+        if (next && next.startsWith("/") && next !== "/login") {
             url.pathname = next;
-            // clear the search param from the redirect URL if handled
             url.searchParams.delete("next");
         } else {
             url.pathname = "/student";
         }
 
+        console.log(`[Middleware] Final Redirect URL: ${url.href}`);
         return NextResponse.redirect(url, { status: 303 });
     }
 
