@@ -10,7 +10,11 @@ export async function GET(req: Request) {
     const cookieStore = cookies();
     const allCookies = cookieStore.getAll();
     allCookies.forEach(cookie => {
-        if (cookie.name.includes("-auth-token") || cookie.name.startsWith("sb-") || cookie.name.includes("supabase-auth-token")) {
+        if (
+            cookie.name.includes("-auth-token") ||
+            cookie.name.startsWith("sb-") ||
+            cookie.name.includes("supabase-auth-token")
+        ) {
             cookieStore.set({ name: cookie.name, value: '', path: '/', maxAge: 0 });
         }
     });

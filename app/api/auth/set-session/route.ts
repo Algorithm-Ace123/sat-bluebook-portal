@@ -11,6 +11,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Missing access_token' }, { status: 400 });
     }
 
+    // Try to extract project ID from URL, fallback to 'supabase'
+    const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1] || 'supabase';
+    const sdkCookieName = `sb-${projectId}-auth-token`;
+
     const now = Math.floor(Date.now() / 1000);
     const maxAge = expires_at && typeof expires_at === 'number' ? Math.max(0, expires_at - now) : 60 * 60;
 
@@ -25,18 +29,24 @@ export async function POST(req: Request) {
       maxAge: maxAge
     };
 
-    // 1. Set our legacy/marker cookies (easy for Middleware to read)
+    // 1. Set our legacy/marker cookies (easy for Middleware and client fallback)
     response.cookies.set('sb-access-token', access_token, options);
     if (refresh_token) {
       response.cookies.set('sb-refresh-token', refresh_token, { ...options, maxAge: 60 * 60 * 24 * 30 });
     }
 
-    // 2. Set the SDK-style cookie manually as a fallback
-    // This format satisfies the Supabase SDK parser
-    const sdkCookieValue = JSON.stringify([access_token, refresh_token || null, null, null]);
-    response.cookies.set('supabase-auth-token', sdkCookieValue, options);
+    // 2. Set the SDK-style cookie manually
+    // The format expected by local storage / supabase-js is roughly:
+    // { "access_token": "...", "refresh_token": "...", ... }
+    // BUT the @supabase/ssr package often looks for an array or specific JSON structure.
+    // We will set the array format as it is most commonly expected by createServerClient defaults.
+    const sdkValue = JSON.stringify([access_token, refresh_token || null, null, null]);
+    response.cookies.set(sdkCookieName, sdkValue, options);
 
-    console.log(`[/api/auth/set-session] Cookies set for session (AT: ${access_token.substring(0, 10)}...)`);
+    // Also set the generic fallback name just in case
+    response.cookies.set('supabase-auth-token', sdkValue, options);
+
+    console.log(`[/api/auth/set-session] Cookies set: ${sdkCookieName} (MaxAge: ${maxAge})`);
 
     return response;
   } catch (err: any) {
