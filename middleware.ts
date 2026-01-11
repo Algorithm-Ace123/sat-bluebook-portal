@@ -18,33 +18,32 @@ export async function middleware(req: NextRequest) {
         pathname.endsWith(".ico") ||
         pathname.endsWith(".pdf");
 
-    // Check for auth cookies (manual markers OR any Supabase SDK auth token)
+    // Exhaustive cookie logging for Vercel debugging
     const allCookies = req.cookies.getAll();
+    const cookieNames = allCookies.map(c => c.name);
     const supabaseCookie = allCookies.find(c => c.name.includes("-auth-token"));
 
-    const authCookie =
-        req.cookies.get("sb-access-token")?.value ??
-        req.cookies.get("sb-refresh-token")?.value ??
-        req.cookies.get("sb-session")?.value ??
-        req.cookies.get("supabase-auth-token")?.value ??
-        supabaseCookie?.value ??
-        null;
+    const legacyAccessToken = req.cookies.get("sb-access-token")?.value;
+    const legacySession = req.cookies.get("sb-session")?.value;
 
-    const isAuthed = !!authCookie;
+    const isAuthed = !!(supabaseCookie || legacyAccessToken || legacySession);
 
-    console.log(`[Middleware] Path: ${pathname}, isAuthed: ${isAuthed}, hasAccessToken: ${!!req.cookies.get("sb-access-token")}, hasSDKToken: ${!!supabaseCookie}`);
+    console.log(`[Middleware] ${req.method} ${pathname}`);
+    console.log(`[Middleware] Cookies found: ${cookieNames.join(", ") || "NONE"}`);
+    console.log(`[Middleware] isAuthed: ${isAuthed} (SDK Cookie: ${!!supabaseCookie}, Legacy AT: ${!!legacyAccessToken}, Legacy Session: ${!!legacySession})`);
 
     // If not authed and trying to access protected pages
     if (!isAuthed && !isPublic) {
+        console.log(`[Middleware] REDIRECT -> /login (Not Authed)`);
         const url = req.nextUrl.clone();
         url.pathname = "/login";
         url.searchParams.set("next", pathname);
-        // Use 303 See Other logic if it was a POST to avoid 405 on /login
         return NextResponse.redirect(url, { status: 303 });
     }
 
     // If authed and tries /login, push them to /student
     if (isAuthed && pathname === "/login") {
+        console.log(`[Middleware] REDIRECT -> /student (Already Authed)`);
         const url = req.nextUrl.clone();
         url.pathname = "/student";
         return NextResponse.redirect(url, { status: 303 });
