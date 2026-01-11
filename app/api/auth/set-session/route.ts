@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     // Compute maxAge/expires
     const now = Math.floor(Date.now() / 1000);
     const maxAge = expires_at && typeof expires_at === 'number' ? Math.max(0, expires_at - now) : 60 * 60; // default 1h
+    console.log(`[/api/auth/set-session] Setting session for ${access_token.substring(0, 10)}..., maxAge: ${maxAge}`);
 
     const cookieStore = cookies();
 

@@ -7,8 +7,13 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const assignmentId = String(form.get("assignmentId") || "");
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    console.log(`[/api/attempts/start] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}`);
+
+    if (!userData.user) {
+        console.warn("[/api/attempts/start] No user found, redirecting to /login");
+        return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
+    }
 
     // create attempt
     const { data: attempt, error } = await supabase

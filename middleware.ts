@@ -28,6 +28,8 @@ export async function middleware(req: NextRequest) {
 
     const isAuthed = !!authCookie;
 
+    console.log(`[Middleware] Path: ${pathname}, isAuthed: ${isAuthed}, hasAccessToken: ${!!req.cookies.get("sb-access-token")}`);
+
     // If not authed and trying to access protected pages
     if (!isAuthed && !isPublic) {
         const url = req.nextUrl.clone();

@@ -14,6 +14,7 @@ export async function supabaseServer() {
 
     const { createServerClient } = await import("@supabase/ssr");
     const cookieStore = cookies();
+    console.log(`[supabaseServer] Initializing with cookies: ${cookieStore.getAll().map(c => c.name).join(", ")}`);
 
     return createServerClient(
         URL,
@@ -21,13 +22,33 @@ export async function supabaseServer() {
         {
             cookies: {
                 get(name: string) {
-                    const val = cookieStore.get(name)?.value;
-                    if (val) return val;
-                    // Fallback to our manual cookie names if Supabase-SSR doesn't find its expected ones
-                    if (name.includes("auth-token")) {
-                        return cookieStore.get("sb-access-token")?.value;
+                    const cookie = cookieStore.get(name);
+                    let val = cookie?.value;
+
+                    if (!val && name.includes("auth-token")) {
+                        const rawVal = cookieStore.get("sb-access-token")?.value;
+                        if (rawVal) {
+                            // Supabase SSR expects the auth-token cookie to be a JSON-stringified array or object.
+                            // If our manual cookie is a raw JWT, we wrap it to satisfy the parser.
+                            if (!rawVal.startsWith("{") && !rawVal.startsWith("[")) {
+                                console.log(`[supabaseServer] Wrapping raw sb-access-token for ${name}`);
+                                const refreshToken = cookieStore.get("sb-refresh-token")?.value || null;
+                                val = JSON.stringify([rawVal, refreshToken, null, null]);
+                            } else {
+                                val = rawVal;
+                            }
+                        }
                     }
-                    return undefined;
+
+                    if (!val && name.includes("session")) {
+                        val = cookieStore.get("sb-session")?.value;
+                        if (val) {
+                            console.log(`[supabaseServer] Fallback: using sb-session for ${name}`);
+                        }
+                    }
+
+                    console.log(`[supabaseServer] get cookie: ${name}, found: ${!!val}`);
+                    return val;
                 },
                 set(name: string, value: string, options: any) {
                     try {

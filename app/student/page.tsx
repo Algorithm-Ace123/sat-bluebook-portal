@@ -23,8 +23,12 @@ export default async function StudentPage() {
         );
     }
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return null; 
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    console.log(`[StudentPage] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}`);
+    if (!userData.user) {
+        console.warn("[StudentPage] No user found, showing nothing (expecting middleware redirect)");
+        return null;
+    }
 
     const { data: profile } = await supabase
         .from("profiles")
