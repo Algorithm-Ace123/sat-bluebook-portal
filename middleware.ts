@@ -41,11 +41,20 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(url, { status: 303 });
     }
 
-    // If authed and tries /login, push them to /student
+    // If authed and tries /login, push them to the intended page or /student
     if (isAuthed && pathname === "/login") {
-        console.log(`[Middleware] REDIRECT -> /student (Already Authed)`);
+        const next = req.nextUrl.searchParams.get("next");
+        console.log(`[Middleware] REDIRECT -> ${next || "/student"} (Already Authed)`);
         const url = req.nextUrl.clone();
-        url.pathname = "/student";
+
+        if (next && next.startsWith("/")) {
+            url.pathname = next;
+            // clear the search param from the redirect URL if handled
+            url.searchParams.delete("next");
+        } else {
+            url.pathname = "/student";
+        }
+
         return NextResponse.redirect(url, { status: 303 });
     }
 

@@ -39,7 +39,9 @@ export default async function AttemptPage({ params }: { params: { attemptId: str
         }
     }
 
-    if (!userData.user) return null;
+    if (!userData.user) {
+        redirect(`/login?next=/test/${params.attemptId}`);
+    }
 
     // 1) Get attempt
     const { data: attempt, error: aErr } = await supabase
