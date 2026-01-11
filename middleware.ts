@@ -10,8 +10,13 @@ export async function middleware(req: NextRequest) {
         pathname === "/" ||
         pathname.startsWith("/_next") ||
         pathname.startsWith("/favicon") ||
-        pathname.startsWith("/api/auth/logout") ||
-        pathname.startsWith("/api"); // don't block APIs; they validate auth themselves
+        pathname.startsWith("/api") ||
+        pathname.endsWith(".png") ||
+        pathname.endsWith(".jpg") ||
+        pathname.endsWith(".jpeg") ||
+        pathname.endsWith(".svg") ||
+        pathname.endsWith(".ico") ||
+        pathname.endsWith(".pdf");
 
     // Avoid using Supabase client in middleware (Edge runtime incompatible).
     // Instead, check for common Supabase session cookie names. If one exists,
