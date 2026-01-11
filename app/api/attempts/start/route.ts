@@ -7,7 +7,30 @@ export async function POST(req: Request) {
     const form = await req.formData();
     const assignmentId = String(form.get("assignmentId") || "");
 
-    const { data: userData, error: userError } = await supabase.auth.getUser();
+    let { data: userData, error: userError } = await supabase.auth.getUser();
+
+    // BRUTE FORCE RECOVERY
+    if (!userData.user) {
+        const { cookies } = await import("next/headers");
+        const cookieStore = cookies();
+        const fallbackToken = cookieStore.get("sb-access-token")?.value;
+        const fallbackRefresh = cookieStore.get("sb-refresh-token")?.value || "";
+
+        if (fallbackToken) {
+            console.log("[/api/attempts/start] Attempting brute-force recovery...");
+            const { data: recovered, error: recError } = await supabase.auth.setSession({
+                access_token: fallbackToken,
+                refresh_token: fallbackRefresh
+            });
+            if (recovered.user) {
+                console.log("[/api/attempts/start] Recovery SUCCESS");
+                userData = recovered;
+            } else {
+                console.error("[/api/attempts/start] Recovery FAILED:", recError);
+            }
+        }
+    }
+
     console.log(`[/api/attempts/start] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}`);
 
     if (!userData.user) {

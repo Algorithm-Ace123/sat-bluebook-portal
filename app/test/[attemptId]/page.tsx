@@ -20,7 +20,25 @@ export default async function AttemptPage({ params }: { params: { attemptId: str
         );
     }
 
-    const { data: userData } = await supabase.auth.getUser();
+    let { data: userData } = await supabase.auth.getUser();
+
+    // BRUTE FORCE RECOVERY
+    if (!userData.user) {
+        const { cookies } = await import("next/headers");
+        const cookieStore = cookies();
+        const fallbackToken = cookieStore.get("sb-access-token")?.value;
+        const fallbackRefresh = cookieStore.get("sb-refresh-token")?.value || "";
+
+        if (fallbackToken) {
+            console.log("[AttemptPage] Attempting brute-force recovery...");
+            const { data: recovered } = await supabase.auth.setSession({
+                access_token: fallbackToken,
+                refresh_token: fallbackRefresh
+            });
+            if (recovered.user) userData = recovered;
+        }
+    }
+
     if (!userData.user) return null;
 
     // 1) Get attempt
