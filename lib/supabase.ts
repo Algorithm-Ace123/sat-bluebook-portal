@@ -23,30 +23,7 @@ export async function supabaseServer() {
             cookies: {
                 get(name: string) {
                     const cookie = cookieStore.get(name);
-                    let val = cookie?.value;
-
-                    if (!val && name.includes("auth-token")) {
-                        const rawVal = cookieStore.get("sb-access-token")?.value;
-                        if (rawVal) {
-                            // Supabase SSR expects the auth-token cookie to be a JSON-stringified array or object.
-                            // If our manual cookie is a raw JWT, we wrap it to satisfy the parser.
-                            if (!rawVal.startsWith("{") && !rawVal.startsWith("[")) {
-                                console.log(`[supabaseServer] Wrapping raw sb-access-token for ${name}`);
-                                const refreshToken = cookieStore.get("sb-refresh-token")?.value || null;
-                                val = JSON.stringify([rawVal, refreshToken, null, null]);
-                            } else {
-                                val = rawVal;
-                            }
-                        }
-                    }
-
-                    if (!val && name.includes("session")) {
-                        val = cookieStore.get("sb-session")?.value;
-                        if (val) {
-                            console.log(`[supabaseServer] Fallback: using sb-session for ${name}`);
-                        }
-                    }
-
+                    const val = cookie?.value;
                     console.log(`[supabaseServer] get cookie: ${name}, found: ${!!val}`);
                     return val;
                 },

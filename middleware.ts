@@ -18,17 +18,21 @@ export async function middleware(req: NextRequest) {
         pathname.endsWith(".ico") ||
         pathname.endsWith(".pdf");
 
-    // Check for auth cookies
+    // Check for auth cookies (manual markers OR any Supabase SDK auth token)
+    const allCookies = req.cookies.getAll();
+    const supabaseCookie = allCookies.find(c => c.name.includes("-auth-token"));
+
     const authCookie =
         req.cookies.get("sb-access-token")?.value ??
         req.cookies.get("sb-refresh-token")?.value ??
         req.cookies.get("sb-session")?.value ??
         req.cookies.get("supabase-auth-token")?.value ??
+        supabaseCookie?.value ??
         null;
 
     const isAuthed = !!authCookie;
 
-    console.log(`[Middleware] Path: ${pathname}, isAuthed: ${isAuthed}, hasAccessToken: ${!!req.cookies.get("sb-access-token")}`);
+    console.log(`[Middleware] Path: ${pathname}, isAuthed: ${isAuthed}, hasAccessToken: ${!!req.cookies.get("sb-access-token")}, hasSDKToken: ${!!supabaseCookie}`);
 
     // If not authed and trying to access protected pages
     if (!isAuthed && !isPublic) {
