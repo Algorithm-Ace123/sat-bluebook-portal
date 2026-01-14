@@ -7,6 +7,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { access_token, refresh_token, expires_at } = body || {};
 
+    // Diagnostics: log basic info (mask tokens)
+    const mask = (t: string | undefined) => (t ? `${t.slice(0, 6)}...${t.slice(-6)}` : null);
+    console.log(`[/api/auth/set-session] Received body: access_token=${mask(access_token)}, refresh_token=${!!refresh_token}, expires_at=${expires_at}`);
+    const cookieStore = cookies();
+    console.log(`[/api/auth/set-session] Incoming cookies: ${cookieStore.getAll().map(c => c.name + (c.name.includes('auth') ? '=***' : `=${c.value}`)).join(', ')}`);
+
     if (!access_token) {
       return NextResponse.json({ ok: false, error: 'Missing access_token' }, { status: 400 });
     }
@@ -19,6 +25,8 @@ export async function POST(req: Request) {
     const maxAge = expires_at && typeof expires_at === 'number' ? Math.max(0, expires_at - now) : 60 * 60;
 
     const response = NextResponse.json({ ok: true });
+
+    console.log(`[/api/auth/set-session] Will set cookies: sb-access-token (maxAge=${maxAge})`);
 
     // Cookie options
     const options = {

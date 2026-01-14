@@ -28,6 +28,8 @@ export default function StartAttemptButton({
                 return;
             }
 
+            console.debug('[StartAttempt] Starting attempt', { assignmentId, hasSession: !!session?.access_token });
+
             // Call API with explicit Bearer token to bypass cookie issues
             const res = await fetch("/api/attempts/start", {
                 method: "POST",
@@ -39,13 +41,17 @@ export default function StartAttemptButton({
                 body: JSON.stringify({ assignmentId })
             });
 
+            console.debug('[StartAttempt] response', { status: res.status, redirected: res.redirected });
+
             if (res.redirected) {
                 // Should not happen with JSON switch, but just in case
+                console.debug('[StartAttempt] redirected to', res.url);
                 window.location.href = res.url;
                 return;
             }
 
-            const json = await res.json();
+            const json = await res.json().catch(() => null);
+            console.debug('[StartAttempt] response json', json);
 
             if (!res.ok) {
                 throw new Error(json.error || "Failed to start attempt");

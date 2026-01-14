@@ -4,6 +4,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { access_token, refresh_token } = body || {};
+    const mask = (t: string | undefined) => (t ? `${t.slice(0, 6)}...${t.slice(-6)}` : null);
+    console.log(`[/api/auth/force-sdk-cookie] body: access_token=${mask(access_token)}, refresh_token=${!!refresh_token}`);
 
     if (!access_token) {
       return NextResponse.json({ ok: false, error: 'Missing access_token' }, { status: 400 });

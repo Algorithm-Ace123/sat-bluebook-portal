@@ -316,14 +316,21 @@ export default function TestRunner({
             else {
                 // AUTO SUBMIT
                 setIsSubmitting(true);
+                console.debug('[TestRunner] Auto-submitting attempt', { attemptId });
                 fetch("/api/attempts/submit", {
                     method: "POST",
                     credentials: 'same-origin',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ attemptId })
-                }).then(() => {
-                    window.location.href = `/student/results/${attemptId}`;
-                }).catch(() => {
+                }).then(async (res) => {
+                    console.debug('[TestRunner] auto-submit response', { status: res.status, ok: res.ok });
+                    if (res.ok) {
+                        window.location.href = `/student/results/${attemptId}`;
+                    } else {
+                        setIsSubmitting(false);
+                    }
+                }).catch((err) => {
+                    console.error('[TestRunner] auto-submit failed', err);
                     setIsSubmitting(false);
                 });
             }
@@ -335,12 +342,16 @@ export default function TestRunner({
         async (questionId: string, answer: any) => {
             setAnswers((prev) => ({ ...prev, [questionId]: answer }));
             if (!questionId) return;
+            console.debug('[TestRunner] saving answer', { attemptId, questionId, answer });
             fetch("/api/attempts/save", {
                 method: "POST",
                 credentials: 'same-origin',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ attemptId, questionId, answer, isCorrect: null })
-            }).catch(() => { });
+            }).then(async (res) => {
+                console.debug('[TestRunner] save response', { status: res.status, ok: res.ok });
+                try { const j = await res.json().catch(() => null); console.debug('[TestRunner] save json', j); } catch(e){}
+            }).catch((e) => { console.error('[TestRunner] save error', e); });
         },
         [attemptId]
     );
@@ -561,18 +572,21 @@ export default function TestRunner({
                     }
                 }
 
+                console.debug('[TestRunner] manual submit', { attemptId, finalAnswerCount: Object.keys(finalAnswers).length });
                 const res = await fetch("/api/attempts/submit", {
                     method: "POST",
                     credentials: 'same-origin',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ attemptId, answers: finalAnswers })
                 });
+                console.debug('[TestRunner] manual submit response', { status: res.status, ok: res.ok });
                 if (res.ok) {
                     window.location.href = `/student/results/${attemptId}`;
                     return;
                 } else {
-                    const errorData = await res.json();
-                    alert(`Submission failed: ${errorData.error || "Unknown error"}`);
+                    const errorData = await res.json().catch(() => null);
+                    console.debug('[TestRunner] manual submit errorData', errorData);
+                    alert(`Submission failed: ${errorData?.error || "Unknown error"}`);
                 }
             } catch (err: any) {
                 console.error("Submission failed", err);
