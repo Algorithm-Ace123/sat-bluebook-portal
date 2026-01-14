@@ -47,19 +47,6 @@ for (let i = 0; i < 30; i++) MATH_EASY[i] = 200 + i * 6;
 
 export type Route = "easy" | "hard";
 
-export function inferRoute(m2: any, m1Correct: number, section: "RW" | "MATH"): Route {
-    // If the module object has a label/difficulty hint, use it
-    if (m2?.difficulty === "hard" || m2?.label?.toLowerCase().includes("hard")) return "hard";
-    if (m2?.difficulty === "easy" || m2?.label?.toLowerCase().includes("easy")) return "easy";
-
-    // Fallback: Infer from Module 1 performance
-    if (section === "RW") {
-        return m1Correct >= 18 ? "hard" : "easy";
-    } else {
-        return m1Correct >= 15 ? "hard" : "easy";
-    }
-}
-
 function clamp(n: number, lo: number, hi: number) {
     return Math.max(lo, Math.min(hi, n));
 }
@@ -162,8 +149,8 @@ export function calculateTotalScore(
     m2Correct: number,
     m2Total: number
 ): { rw: number; math: number; total: number } {
-    const rw = calculateSectionScore(rw1Correct, rw1Total, rw2Correct, rw2Total, "RW");
-    const math = calculateSectionScore(m1Correct, m1Total, m2Correct, m2Total, "MATH");
+    const rw = calculateSectionScore(rw1Correct, rw1Total, rw2Correct, rw1Total + rw2Total, "RW");
+    const math = calculateSectionScore(m1Correct, m1Total, m2Correct, m1Total + m2Total, "MATH");
 
     return {
         rw,
@@ -171,4 +158,3 @@ export function calculateTotalScore(
         total: rw + math
     };
 }
-

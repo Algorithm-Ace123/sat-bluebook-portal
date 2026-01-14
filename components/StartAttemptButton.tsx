@@ -31,6 +31,7 @@ export default function StartAttemptButton({
             // Call API with explicit Bearer token to bypass cookie issues
             const res = await fetch("/api/attempts/start", {
                 method: "POST",
+                credentials: 'same-origin',
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${session.access_token}`

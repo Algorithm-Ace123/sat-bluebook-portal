@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import dynamicImport from 'next/dynamic';
 const LogoClient = dynamicImport(() => import('../../components/InlineLogo'), { ssr: false });
 import { supabaseServer } from "../../lib/supabase";
-
-import StartAttemptButton from "@/components/StartAttemptButton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,61 +23,8 @@ export default async function StudentPage() {
         );
     }
 
-    const cookieStore = cookies();
-    const cookieNames = cookieStore.getAll().map((c: any) => c.name).join(", ");
-    let { data: userData, error: userError } = await supabase.auth.getUser();
-
-    // Manual Recovery: If SDK failed to find the user but we have our fallback cookie
-    const fallbackToken = cookieStore.get("sb-access-token")?.value;
-
-    if (!userData.user && fallbackToken) {
-        console.warn("[StudentPage] Standard check failed. Attempting manual recovery using sb-access-token...");
-        const fallbackRefresh = cookieStore.get("sb-refresh-token")?.value || "";
-        const { data: recoveredData, error: recoverError } = await supabase.auth.setSession({
-            access_token: fallbackToken,
-            refresh_token: fallbackRefresh
-        });
-
-        if (recoveredData.user) {
-            console.log("[StudentPage] Manual recovery SUCCESS.");
-            userData = recoveredData;
-        } else {
-            console.error("[StudentPage] Manual recovery FAILED:", recoverError);
-        }
-    }
-
-    console.log(`[StudentPage] User detected: ${!!userData?.user}, Error: ${userError?.message || "none"}, Cookies: ${cookieNames}`);
-
-    if (!userData.user) {
-        console.warn("[StudentPage] No user found. Showing debug screen.");
-        return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-red-100">
-                    <div className="flex flex-col items-center text-center">
-                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        </div>
-                        <h1 className="text-xl font-bold text-slate-900 mb-2">Session Error</h1>
-                        <p className="text-sm text-slate-600 mb-6">
-                            We detected your login cookie, but the server could not validate your session. This usually happens due to browser security settings or network proxies.
-                        </p>
-
-                        <div className="w-full bg-slate-100 rounded-lg p-3 mb-6 text-left overflow-hidden">
-                            <p className="text-[10px] font-mono text-slate-500 break-all">
-                                <strong>Debug Info:</strong><br />
-                                Cookies: {cookieNames || "None"}<br />
-                                Error: {userError?.message || "User Missing"}
-                            </p>
-                        </div>
-
-                        <Link href="/login" className="w-full rounded-xl bg-slate-900 text-white py-3 font-bold hover:bg-slate-800 transition">
-                            Return to Login
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null; 
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -246,10 +190,13 @@ export default async function StudentPage() {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                             </Link>
                                         ) : (
-                                            <StartAttemptButton
-                                                assignmentId={t.assignment_id}
-                                                label={attempt ? "Resume Mock Exam" : "Begin Mock Exam"}
-                                            />
+                                            <form action="/api/attempts/start" method="post" className="w-full md:w-auto">
+                                                <input type="hidden" name="assignmentId" value={t.assignment_id} />
+                                                <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 text-white px-8 py-4 font-bold hover:bg-blue-700 transition shadow-xl shadow-blue-200 w-full md:w-auto active:transform active:scale-95">
+                                                    {attempt ? "Resume Mock Exam" : "Begin Mock Exam"}
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7-7 7M3 12h18" /></svg>
+                                                </button>
+                                            </form>
                                         )}
                                     </div>
                                 </div>

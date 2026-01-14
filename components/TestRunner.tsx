@@ -318,6 +318,7 @@ export default function TestRunner({
                 setIsSubmitting(true);
                 fetch("/api/attempts/submit", {
                     method: "POST",
+                    credentials: 'same-origin',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ attemptId })
                 }).then(() => {
@@ -336,6 +337,7 @@ export default function TestRunner({
             if (!questionId) return;
             fetch("/api/attempts/save", {
                 method: "POST",
+                credentials: 'same-origin',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ attemptId, questionId, answer, isCorrect: null })
             }).catch(() => { });
@@ -561,6 +563,7 @@ export default function TestRunner({
 
                 const res = await fetch("/api/attempts/submit", {
                     method: "POST",
+                    credentials: 'same-origin',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ attemptId, answers: finalAnswers })
                 });

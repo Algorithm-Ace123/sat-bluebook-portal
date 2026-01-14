@@ -35,18 +35,15 @@ export async function POST(req: Request) {
       response.cookies.set('sb-refresh-token', refresh_token, { ...options, maxAge: 60 * 60 * 24 * 30 });
     }
 
-    // 2. Set the SDK-style cookie manually
-    // The format expected by local storage / supabase-js is roughly:
-    // { "access_token": "...", "refresh_token": "...", ... }
-    // BUT the @supabase/ssr package often looks for an array or specific JSON structure.
-    // We will set the array format as it is most commonly expected by createServerClient defaults.
-    const sdkValue = JSON.stringify([access_token, refresh_token || null, null, null]);
-    response.cookies.set(sdkCookieName, sdkValue, options);
+    // 2. COOKIE STRATEGY: MINIMAL FOOTPRINT
+    // We do NOT set the project-specific SDK cookie (sb-[project]-auth-token) here.
+    // Why? It duplicates the access_token (JWT), doubling the header size.
+    // If the JWT is ~2KB, setting it twice hits the 4KB Vercel limit, causing ALL cookies to drop.
+    // Instead, we set ONLY 'sb-access-token' and 'sb-refresh-token'.
+    // The lib/supabase.ts client is smart enough to intercept requests for the SDK cookie
+    // and dynamically construct the expected JSON from these two raw cookies.
 
-    // REMOVED: response.cookies.set('supabase-auth-token', ...) to save header space.
-    // The middleware and our manual recovery logic check 'sb-access-token' or the project-specific one.
-
-    console.log(`[/api/auth/set-session] Cookies set: ${sdkCookieName} + sb-access-token`);
+    console.log(`[/api/auth/set-session] Cookies set: sb-access-token (MaxAge: ${maxAge})`);
 
     return response;
   } catch (err: any) {
