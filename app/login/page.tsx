@@ -54,24 +54,28 @@ export default function LoginPage() {
                 throw new Error('Server persist failed');
             }
         } catch (err) {
-            console.warn('Fallback to client-side cookie persistence:', err);
-            try {
-                const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
-                    ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
-                    : 60 * 60 * 24; // fallback 24h
+            console.warn('Server session persistence warning:', err);
+        }
 
-                const cookieBase = `; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
-                document.cookie = `sb-access-token=${data.session?.access_token}${cookieBase}`;
-                if (data.session?.refresh_token) {
-                    document.cookie = `sb-refresh-token=${data.session.refresh_token}${cookieBase}`;
-                }
-                document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}${cookieBase}`;
-            } catch (err2) {
-                console.error('Critical session failure:', err2);
-                setErr('Logged in, but failed to save session. Please ensure cookies are enabled.');
-                setLoading(false);
-                return;
+        // ALWAYS set client-side cookies as a failsafe for the immediate next request
+        try {
+            const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
+                ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
+                : 60 * 60 * 24; // fallback 24h
+
+            const cookieBase = `; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+            document.cookie = `sb-access-token=${data.session?.access_token}${cookieBase}`;
+            if (data.session?.refresh_token) {
+                document.cookie = `sb-refresh-token=${data.session.refresh_token}${cookieBase}`;
             }
+            // Also set the manual 'supabase-auth-token' which middleware looks for
+            const sdkVal = JSON.stringify([data.session?.access_token, data.session?.refresh_token, null, null]);
+            document.cookie = `supabase-auth-token=${encodeURIComponent(sdkVal)}${cookieBase}`;
+
+            document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}${cookieBase}`;
+            console.debug('Client-side cookies set successfully');
+        } catch (cookieErr) {
+            console.error('Failed to set client-side cookies:', cookieErr);
         }
 
         // Fetch profile role and route accordingly
@@ -96,9 +100,10 @@ export default function LoginPage() {
         }
 
         // Respect the `next` query param if present and safe
+        let next: string | null = null;
         try {
             const params = new URLSearchParams(window.location.search);
-            const next = params.get('next');
+            next = params.get('next');
             if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') && next !== '/login') {
                 // Prevent open redirect; ensure path only
                 window.location.href = next;
@@ -109,9 +114,19 @@ export default function LoginPage() {
         }
 
         if (profile.role === "teacher") {
-            window.location.href = "/teacher";
+            if (next && next.startsWith("/teacher")) {
+                window.location.href = next;
+            } else {
+                window.location.href = "/teacher";
+            }
         } else {
-            window.location.href = "/student";
+            // Student
+            if (next && next.startsWith("/")) {
+                // Trust the next param for students (e.g. /test/123, /student, etc)
+                window.location.href = next;
+            } else {
+                window.location.href = "/student";
+            }
         }
     }
 
