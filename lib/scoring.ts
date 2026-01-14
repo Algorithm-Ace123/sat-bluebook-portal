@@ -52,6 +52,49 @@ function clamp(n: number, lo: number, hi: number) {
 }
 
 /**
+ * Infer whether a module uses the "hard" or "easy" route.
+ *
+ * Priority:
+ * 1) If `mod` contains an explicit route/difficulty label, use that
+ * 2) Else fall back to a simple performance heuristic on M1 correctness
+ *    (tuned conservatively).
+ */
+export function inferRoute(mod: any | null, m1Correct: number, section: "RW" | "MATH"): Route {
+    // 1) Explicit metadata hints
+    if (mod) {
+        const meta = (mod.meta ?? {}) as any;
+        const route = (mod.route ?? meta.route ?? mod.difficulty ?? meta.difficulty) as string | undefined;
+        if (route) {
+            const r = route.toString().toLowerCase();
+            if (r.includes("hard")) return "hard";
+            if (r.includes("easy")) return "easy";
+        }
+
+        // Some tests may include labels or tags
+        const tags = (mod.tags ?? mod.labels ?? []) as string[];
+        if (Array.isArray(tags)) {
+            for (const t of tags) {
+                const tl = String(t).toLowerCase();
+                if (tl.includes("hard") || tl.includes("advanced")) return "hard";
+                if (tl.includes("easy") || tl.includes("calculator")) return "easy";
+            }
+        }
+    }
+
+    // 2) Heuristic fallback based on M1 performance
+    // Assume module1 is roughly half the section.
+    // Thresholds are conservative: require a strong M1 performance to assume hard route.
+    if (section === "RW") {
+        // RW M1 out of ~27-28 — treat >=24 as hard
+        return m1Correct >= 24 ? "hard" : "easy";
+    }
+
+    // MATH
+    // M1 out of ~22 — treat >=20 as hard
+    return m1Correct >= 20 ? "hard" : "easy";
+}
+
+/**
  * Digital SAT scoring support (strict mapping by default)
  *
  * To increase accuracy for the new Digital SAT, we use anchor-based
