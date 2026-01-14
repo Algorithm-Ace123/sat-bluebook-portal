@@ -68,12 +68,9 @@ export default function LoginPage() {
             if (data.session?.refresh_token) {
                 document.cookie = `sb-refresh-token=${data.session.refresh_token}${cookieBase}`;
             }
-            // Also set the manual 'supabase-auth-token' which middleware looks for
-            const sdkVal = JSON.stringify([data.session?.access_token, data.session?.refresh_token, null, null]);
-            document.cookie = `supabase-auth-token=${encodeURIComponent(sdkVal)}${cookieBase}`;
-
-            document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}${cookieBase}`;
-            console.debug('Client-side cookies set successfully');
+            // REMOVED: supabase-auth-token and sb-session to save space.
+            // We rely on sb-access-token for Middleware and Server Client manual recovery.
+            console.debug('Client-side cookies set successfully (lightweight)');
         } catch (cookieErr) {
             console.error('Failed to set client-side cookies:', cookieErr);
         }

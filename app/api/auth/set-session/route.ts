@@ -43,10 +43,10 @@ export async function POST(req: Request) {
     const sdkValue = JSON.stringify([access_token, refresh_token || null, null, null]);
     response.cookies.set(sdkCookieName, sdkValue, options);
 
-    // Also set the generic fallback name just in case
-    response.cookies.set('supabase-auth-token', sdkValue, options);
+    // REMOVED: response.cookies.set('supabase-auth-token', ...) to save header space.
+    // The middleware and our manual recovery logic check 'sb-access-token' or the project-specific one.
 
-    console.log(`[/api/auth/set-session] Cookies set: ${sdkCookieName} (MaxAge: ${maxAge})`);
+    console.log(`[/api/auth/set-session] Cookies set: ${sdkCookieName} + sb-access-token`);
 
     return response;
   } catch (err: any) {

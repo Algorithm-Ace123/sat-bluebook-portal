@@ -19,18 +19,12 @@ export async function middleware(req: NextRequest) {
         pathname.endsWith(".pdf");
 
     // Exhaustive cookie logging for Vercel debugging
+    // Simplified check: Use the two cookies we now guarantee are set (SDK project cookie OR our raw access token)
     const allCookies = req.cookies.getAll();
-    const cookieNames = allCookies.map(c => c.name);
     const supabaseCookie = allCookies.find(c => c.name.includes("-auth-token"));
-    const manualSDKCookie = req.cookies.get("supabase-auth-token")?.value;
     const legacyAccessToken = req.cookies.get("sb-access-token")?.value;
-    const legacySession = req.cookies.get("sb-session")?.value;
 
-    const isAuthed = !!(supabaseCookie || manualSDKCookie || legacyAccessToken || legacySession);
-
-    console.log(`[Middleware] ${req.method} ${pathname}`);
-    console.log(`[Middleware] Cookies found: ${cookieNames.join(", ") || "NONE"}`);
-    console.log(`[Middleware] isAuthed: ${isAuthed} (SDK Cookie: ${!!supabaseCookie}, Legacy AT: ${!!legacyAccessToken}, Legacy Session: ${!!legacySession})`);
+    const isAuthed = !!(supabaseCookie || legacyAccessToken);
 
     // If not authed and trying to access protected pages
     if (!isAuthed && !isPublic) {
