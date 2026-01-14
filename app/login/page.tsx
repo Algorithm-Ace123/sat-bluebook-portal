@@ -36,10 +36,10 @@ export default function LoginPage() {
 
         // Persist session to server cookies so server-side routing and middleware can detect it
         try {
-            console.debug('Persisting session to server...');
             const resp = await fetch('/api/auth/set-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     access_token: data.session?.access_token,
                     refresh_token: data.session?.refresh_token,
@@ -50,29 +50,72 @@ export default function LoginPage() {
 
             const json = await resp.json();
             if (!resp.ok || !json.ok) {
-                console.error('Server session persistence failed:', json);
-                throw new Error('Server persist failed');
+                console.error('Failed to persist session on server:', json);
+                // Fallback: set non-HttpOnly cookies client-side so middleware and server see them
+                try {
+                    const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
+                        ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
+                        : 60 * 60;
+                    document.cookie = `sb-access-token=${data.session?.access_token}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                    document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                } catch (err) {
+                    console.error('Client-side cookie fallback failed', err);
+                    setErr('Logged in, but failed to persist session. Try again or contact admin.');
+                    setLoading(false);
+                    return;
+                }
             }
         } catch (err) {
-            console.warn('Server session persistence warning:', err);
+            console.error('set-session fetch error', err);
+            // Fallback to client-side cookie persistence
+            try {
+                const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
+                    ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
+                    : 60 * 60;
+                document.cookie = `sb-access-token=${data.session?.access_token}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+                document.cookie = `sb-session=${encodeURIComponent(JSON.stringify(data.session))}; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
+            } catch (err2) {
+                console.error('Client-side cookie fallback failed', err2);
+                setErr('Logged in, but failed to persist session. Try again or contact admin.');
+                setLoading(false);
+                return;
+            }
         }
 
-        // ALWAYS set client-side cookies as a failsafe for the immediate next request
+        // Ensure server actually sees the session; Vercel deployments can sometimes drop SDK cookies in edge layers.
         try {
-            const maxAge = (data.session?.expires_at && typeof data.session.expires_at === 'number')
-                ? Math.max(0, data.session.expires_at - Math.floor(Date.now() / 1000))
-                : 60 * 60 * 24; // fallback 24h
-
-            const cookieBase = `; Path=/; Max-Age=${maxAge}; SameSite=Lax; Secure`;
-            document.cookie = `sb-access-token=${data.session?.access_token}${cookieBase}`;
-            if (data.session?.refresh_token) {
-                document.cookie = `sb-refresh-token=${data.session.refresh_token}${cookieBase}`;
+            const check = await fetch('/api/auth/check', { credentials: 'same-origin' });
+            const checkJson = await check.json();
+            if (!checkJson.ok || !checkJson.user) {
+                console.warn('Server did not see session; attempting SDK-cookie fallback');
+                // Try forcing an SDK-style cookie (only as a fallback)
+                try {
+                    const force = await fetch('/api/auth/force-sdk-cookie', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ access_token: data.session?.access_token, refresh_token: data.session?.refresh_token })
+                    });
+                    const fjson = await force.json();
+                    if (!force.ok || !fjson.ok) {
+                        console.error('force-sdk-cookie failed', fjson);
+                    } else {
+                        // re-check
+                        const recheck = await fetch('/api/auth/check', { credentials: 'same-origin' });
+                        const rjson = await recheck.json();
+                        if (!rjson.ok || !rjson.user) {
+                            console.error('Server still not seeing session after fallback', rjson);
+                            setErr('Logged in, but server did not persist session. Try again or contact admin.');
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('force-sdk-cookie error', e);
+                }
             }
-            // REMOVED: supabase-auth-token and sb-session to save space.
-            // We rely on sb-access-token for Middleware and Server Client manual recovery.
-            console.debug('Client-side cookies set successfully (lightweight)');
-        } catch (cookieErr) {
-            console.error('Failed to set client-side cookies:', cookieErr);
+        } catch (e) {
+            console.error('session check error', e);
         }
 
         // Fetch profile role and route accordingly
@@ -97,11 +140,10 @@ export default function LoginPage() {
         }
 
         // Respect the `next` query param if present and safe
-        let next: string | null = null;
         try {
             const params = new URLSearchParams(window.location.search);
-            next = params.get('next');
-            if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') && next !== '/login') {
+            const next = params.get('next');
+            if (next && typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) {
                 // Prevent open redirect; ensure path only
                 window.location.href = next;
                 return;
@@ -111,19 +153,9 @@ export default function LoginPage() {
         }
 
         if (profile.role === "teacher") {
-            if (next && next.startsWith("/teacher")) {
-                window.location.href = next;
-            } else {
-                window.location.href = "/teacher";
-            }
+            window.location.href = "/teacher";
         } else {
-            // Student
-            if (next && next.startsWith("/")) {
-                // Trust the next param for students (e.g. /test/123, /student, etc)
-                window.location.href = next;
-            } else {
-                window.location.href = "/student";
-            }
+            window.location.href = "/student";
         }
     }
 
