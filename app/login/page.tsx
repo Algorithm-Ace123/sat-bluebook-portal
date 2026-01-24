@@ -83,39 +83,60 @@ export default function LoginPage() {
         }
 
         // Ensure server actually sees the session; Vercel deployments can sometimes drop SDK cookies in edge layers.
-        try {
-            const check = await fetch('/api/auth/check', { credentials: 'same-origin' });
-            const checkJson = await check.json();
-            if (!checkJson.ok || !checkJson.user) {
-                console.warn('Server did not see session; attempting SDK-cookie fallback');
-                // Try forcing an SDK-style cookie (only as a fallback)
-                try {
-                    const force = await fetch('/api/auth/force-sdk-cookie', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({ access_token: data.session?.access_token, refresh_token: data.session?.refresh_token })
-                    });
-                    const fjson = await force.json();
-                    if (!force.ok || !fjson.ok) {
-                        console.error('force-sdk-cookie failed', fjson);
-                    } else {
-                        // re-check
-                        const recheck = await fetch('/api/auth/check', { credentials: 'same-origin' });
-                        const rjson = await recheck.json();
-                        if (!rjson.ok || !rjson.user) {
-                            console.error('Server still not seeing session after fallback', rjson);
-                            setErr('Logged in, but server did not persist session. Try again or contact admin.');
-                            setLoading(false);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.error('force-sdk-cookie error', e);
+        // Retry with exponential backoff to give edge network time to propagate cookies
+        let sessionConfirmed = false;
+        const maxRetries = 5;
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                // Wait progressively longer between attempts (100ms, 200ms, 400ms, 800ms, 1600ms)
+                if (attempt > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt - 1)));
                 }
+
+                const check = await fetch('/api/auth/check', { 
+                    credentials: 'same-origin',
+                    cache: 'no-store' // Prevent caching that could hide cookie issues
+                });
+                const checkJson = await check.json();
+                
+                if (checkJson.ok && checkJson.user) {
+                    console.log(`Session confirmed on attempt ${attempt + 1}`);
+                    sessionConfirmed = true;
+                    break;
+                }
+
+                console.warn(`Attempt ${attempt + 1}/${maxRetries}: Server did not see session yet`);
+                
+                // On first failure, try forcing SDK cookie as fallback
+                if (attempt === 0) {
+                    try {
+                        const force = await fetch('/api/auth/force-sdk-cookie', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ 
+                                access_token: data.session?.access_token, 
+                                refresh_token: data.session?.refresh_token 
+                            })
+                        });
+                        const fjson = await force.json();
+                        if (!force.ok || !fjson.ok) {
+                            console.error('force-sdk-cookie failed', fjson);
+                        }
+                    } catch (e) {
+                        console.error('force-sdk-cookie error', e);
+                    }
+                }
+            } catch (e) {
+                console.error(`Session check error on attempt ${attempt + 1}:`, e);
             }
-        } catch (e) {
-            console.error('session check error', e);
+        }
+
+        if (!sessionConfirmed) {
+            console.error('Failed to confirm session after all retries');
+            setErr('Logged in, but server could not verify session. Please try again or contact admin.');
+            setLoading(false);
+            return;
         }
 
         // Fetch profile role and route accordingly

@@ -25,6 +25,10 @@ export async function POST(req: Request) {
     const maxAge = expires_at && typeof expires_at === 'number' ? Math.max(0, expires_at - now) : 60 * 60;
 
     const response = NextResponse.json({ ok: true });
+    
+    // Prevent edge caching to ensure cookies propagate correctly
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    response.headers.set('Pragma', 'no-cache');
 
     console.log(`[/api/auth/set-session] Will set cookies: sb-access-token (maxAge=${maxAge})`);
 
