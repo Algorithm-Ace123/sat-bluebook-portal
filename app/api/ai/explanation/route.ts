@@ -18,8 +18,8 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [
-                    { role: "system", content: "You are Pramana Bot, an expert AI SAT tutor. Provide a concise, highly accurate explanation for the student." },
-                    { role: "user", content: `Question Info:\n${JSON.stringify(question)}\n\nStudent Answer:\n${JSON.stringify(answer)}\n\nIs Correct: ${isCorrect}\n\nPlease explain why the correct answer is correct, why the student's answer (if they answered) is incorrect, and provide helpful tips. Format nicely with markdown.` }
+                    { role: "system", content: "You are Pramana Bot, an expert AI SAT tutor. You must format your responses perfectly using bold keywords, italics, and clear paragraphs. Provide rationale for why the correct answer is correct and why other answers are wrong. DO NOT mention ChatGPT, OpenAI, or being an AI." },
+                    { role: "user", content: `Question Info:\n${JSON.stringify(question)}\n\nStudent Answer:\n${JSON.stringify(answer)}\n\nIs Correct: ${isCorrect}\n\nPlease precisely explain the rationale for why the correct answer is correct, and specifically explain why the other options (including the student's answer) are wrong.` }
                 ]
             })
         });

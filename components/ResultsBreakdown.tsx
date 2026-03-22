@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import StimulusRender from "@/components/StimulusRender";
 import RichTextRender from "@/components/RichTextRender";
 import katex from "katex";
@@ -106,10 +106,18 @@ export default function ResultsBreakdown({
             });
             const data = await res.json();
             if (data.evaluation) setEvaluation(data.evaluation);
-            else alert(data.error || "Failed to get evaluation. Make sure OPENAI_API_KEY is configured.");
-        } catch (e: any) { alert("Error connecting to evaluation API."); }
+            else console.error(data.error || "Failed to get evaluation.");
+        } catch (e: any) { console.error("Error connecting to evaluation API."); }
         setLoadingEval(false);
     };
+
+    const hasRequestedEval = useRef(false);
+    useEffect(() => {
+        if (!hasRequestedEval.current) {
+            hasRequestedEval.current = true;
+            handleEvaluation();
+        }
+    }, []);
 
     const handleExplain = async (qid: string, item: any, isCorrect: boolean, studentAnswer: any) => {
         setLoadingExp(prev => ({ ...prev, [qid]: true }));
@@ -137,16 +145,17 @@ export default function ResultsBreakdown({
                     </div>
                     <div className="flex-1 text-center md:text-left">
                         <h2 className="text-2xl font-bold">Pramana Bot Overall Evaluation</h2>
-                        <p className="text-slate-400 mt-2 text-sm max-w-2xl">Use ChatGPT to generate a comprehensive analysis of your performance across modules, highlighting your strongest areas and identifying weaknesses.</p>
+                        <p className="text-slate-400 mt-2 text-sm max-w-2xl">Pramana Bot generates a comprehensive analysis of your performance across modules, highlighting your strongest areas and identifying weaknesses.</p>
                         
                         {!evaluation ? (
-                            <button onClick={handleEvaluation} disabled={loadingEval} className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition flex items-center gap-2 mx-auto md:mx-0">
-                                {loadingEval ? "Analyzing..." : "Ask Pramana Bot for an Evaluation"}
-                            </button>
+                            <div className="mt-6 flex items-center justify-center md:justify-start gap-3 text-blue-400 font-medium">
+                                <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                Pramana Bot is analyzing your test...
+                            </div>
                         ) : (
                             <div className="mt-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50">
                                 <RichTextRender nodes={[{ type: 'text', text: evaluation }]} />
-                                <div className="text-xs text-slate-500 mt-4 uppercase tracking-widest font-bold">Generative AI Response by ChatGPT</div>
+                                <div className="text-xs text-slate-500 mt-4 uppercase tracking-widest font-bold">Automatic Generative Feedback by Pramana Bot</div>
                             </div>
                         )}
                     </div>
