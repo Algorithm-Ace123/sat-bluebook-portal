@@ -6,6 +6,7 @@ import { supabaseServer } from "../../lib/supabase";
 export const dynamic = "force-dynamic";
 
 import { calculateSectionScore } from "@/lib/scoring";
+import StudentProgressCharts, { PulseCard } from "@/components/StudentProgressCharts";
 
 export default async function StudentPage() {
     let supabase: any;
@@ -69,8 +70,8 @@ export default async function StudentPage() {
     const attemptsMap = new Map();
     (attempts || []).forEach((a: any) => attemptsMap.set(a.assignment_id, a));
 
-    const getScaledScore = (attempt: any, testJson: any) => {
-        if (!attempt || !testJson) return 400;
+    const getDetailedScores = (attempt: any, testJson: any) => {
+        if (!attempt || !testJson) return { rw: 0, math: 0, total: 0 };
 
         const answersMap = new Map();
         (attempt.attempt_answers || []).forEach((a: any) => answersMap.set(a.question_id, a));
@@ -96,8 +97,44 @@ export default async function StudentPage() {
             modStats[3]?.correct ?? 0, modStats[3]?.total ?? 0,
             "MATH"
         );
-        return rw + math;
+        return { rw, math, total: rw + math };
     };
+
+    const getScaledScore = (attempt: any, testJson: any) => getDetailedScores(attempt, testJson).total;
+
+    // Process Performance History
+    const submittedAttempts = (attempts || [])
+        .filter((a: any) => a.status === 'submitted')
+        .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    const history = submittedAttempts.map((a: any) => {
+        const target = targets?.find((t: any) => t.assignment_id === a.assignment_id);
+        const testJson = target?.assignments?.tests?.json;
+        if (!testJson) return null;
+
+        const scores = getDetailedScores(a, testJson);
+        return {
+            name: target.assignments.title,
+            rw: scores.rw,
+            math: scores.math,
+            total: scores.total,
+            date: new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+    }).filter((item: any): item is { name: string; rw: number; math: number; total: number; date: string } => !!item);
+
+    const latest = history[history.length - 1];
+    const previous = history[history.length - 2];
+
+    const getDelta = (curr: number, prev: number) => {
+        if (!prev) return null;
+        const diff = curr - prev;
+        const trend: 'up' | 'down' | 'flat' = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+        return { diff, trend };
+    };
+
+    const rwDelta = latest && previous ? getDelta(latest.rw, previous.rw) : null;
+    const mathDelta = latest && previous ? getDelta(latest.math, previous.math) : null;
+    const totalDelta = latest && previous ? getDelta(latest.total, previous.total) : null;
 
     return (
         <div className="min-h-screen bg-slate-50 pb-32 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -158,6 +195,22 @@ export default async function StudentPage() {
                     </div>
                 </div>
             </header>
+
+            <main className="max-w-7xl mx-auto px-8 -mt-10 mb-20 relative z-20">
+                {history.length > 0 && (
+                    <div className="space-y-10">
+                        <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <PulseCard label="English Proficiency" score={latest?.rw || 200} delta={rwDelta} color="blue" />
+                            <PulseCard label="Math Proficiency" score={latest?.math || 200} delta={mathDelta} color="purple" />
+                            <PulseCard label="Total Performance" score={latest?.total || 400} delta={totalDelta} color="emerald" />
+                        </section>
+
+                        <section>
+                            <StudentProgressCharts history={history} />
+                        </section>
+                    </div>
+                )}
+            </main>
 
             <main className="max-w-7xl mx-auto px-8 mt-16">
                 <div className="flex items-center justify-between mb-10">
