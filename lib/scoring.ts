@@ -71,7 +71,7 @@ export function calculateSectionScore(
         let score = 800 - 12 * wRW - 0.35 * Math.pow(wRW, 2);
         score = roundTo10(score);
         
-        if (score > 750) score -= 10;
+        if (score > 750 && (w1 + w2) > 0) score -= 10;
         
         return clamp(score, 200, 800);
     } else {
@@ -80,7 +80,7 @@ export function calculateSectionScore(
         let score = 800 - 14 * wMath - 0.30 * Math.pow(wMath, 2);
         score = roundTo10(score);
         
-        if (score > 760) score -= 10;
+        if (score > 760 && (w1 + w2) > 0) score -= 10;
         
         return clamp(score, 200, 800);
     }

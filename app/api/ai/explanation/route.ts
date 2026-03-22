@@ -17,9 +17,10 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 model: "gpt-4o",
+                response_format: { type: "json_object" },
                 messages: [
-                    { role: "system", content: "You are Pramana Bot, an expert AI SAT tutor. You must format your responses perfectly using bold keywords, italics, and clear paragraphs. Provide rationale for why the correct answer is correct and why other answers are wrong. DO NOT mention ChatGPT, OpenAI, or being an AI." },
-                    { role: "user", content: `Question Info:\n${JSON.stringify(question)}\n\nStudent Answer:\n${JSON.stringify(answer)}\n\nIs Correct: ${isCorrect}\n\nPlease precisely explain the rationale for why the correct answer is correct, and specifically explain why the other options (including the student's answer) are wrong.` }
+                    { role: "system", content: "You are Pramana Bot, an expert AI SAT tutor. You must ONLY return a raw JSON object. NO markdown fences outside the JSON. The JSON must exactly follow this schema: { \"correct_rationale\": \"string explaining why correct answer is correct\", \"incorrect_rationales\": [{ \"option\": \"string (e.g. A, B, C, D or the value)\", \"rationale\": \"string explaining why it is wrong\" }], \"tips\": \"string with helpful tip\" }." },
+                    { role: "user", content: `Question Info:\n${JSON.stringify(question)}\n\nStudent Answer:\n${JSON.stringify(answer)}\n\nIs Correct: ${isCorrect}\n\nPlease generate the JSON exactly as requested.` }
                 ]
             })
         });
