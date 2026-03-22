@@ -192,7 +192,7 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
             {/* Nav */}
             <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
                 <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/student" className="text-blue-600 font-bold hover:underline flex items-center gap-2 text-sm">
+                    <Link href="/student" className="text-slate-600 font-bold hover:text-green-600 transition flex items-center gap-2 text-sm">
                         ← Back to Dashboard
                     </Link>
                     <div className="text-sm font-bold text-slate-500 truncate max-w-xs">{test.title}</div>
@@ -210,7 +210,7 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
                                 <span className="text-8xl font-black text-slate-900 leading-none">{totalScaled}</span>
                                 <span className="absolute -bottom-2 -right-12 text-2xl font-black text-slate-300">/ 1600</span>
                             </div>
-                            <div className="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold self-center lg:self-start">
+                            <div className="bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-xs font-bold self-center lg:self-start border border-green-100">
                                 Mock Assessment Completed
                             </div>
                             <div className="text-xs text-slate-500">
@@ -221,7 +221,7 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
                         <div className="lg:col-span-2 flex flex-col md:flex-row items-center justify-around bg-slate-50 rounded-[32px] p-10 border border-slate-100 gap-8">
                             <div className="flex flex-col items-center space-y-4">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Reading & Writing</h3>
-                                <SemicircleGauge value={rwScaled} total={800} label="Score" color="#3b82f6" />
+                                <SemicircleGauge value={rwScaled} total={800} label="Score" color="#22c55e" />
                                 <div className="text-sm font-medium text-slate-600">{rwCorrectTotal} / {rwItemsTotal} Correct</div>
                             </div>
 
@@ -229,7 +229,7 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
 
                             <div className="flex flex-col items-center space-y-4">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Mathematics</h3>
-                                <SemicircleGauge value={mathScaled} total={800} label="Score" color="#10b981" />
+                                <SemicircleGauge value={mathScaled} total={800} label="Score" color="#16a34a" />
                                 <div className="text-sm font-medium text-slate-600">{mathCorrectTotal} / {mathItemsTotal} Correct</div>
                             </div>
                         </div>

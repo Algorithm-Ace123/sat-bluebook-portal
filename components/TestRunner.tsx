@@ -22,6 +22,7 @@ import RichTextRender from "@/components/RichTextRender";
 import QuestionPopover from "@/components/QuestionPopover";
 import DesmosPanel from "@/components/DesmosPanel";
 import ReferencePanel from "@/components/ReferencePanel";
+import Modal from "./Modal";
 
 function Latex({ latex }: { latex: string }) {
     const html = useMemo(() => katex.renderToString(latex, { throwOnError: false }), [latex]);
@@ -210,6 +211,7 @@ export default function TestRunner({
     testJson: any;
 }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmEnd, setShowConfirmEnd] = useState(false);
     const test = testJson;
 
     const steps = useMemo(() => buildStepsFromTest(test), [test]);
@@ -524,7 +526,7 @@ export default function TestRunner({
                 if (before) newParts.push(before);
 
                 const cls =
-                    h.color === "yellow" ? "bg-yellow-200/90" : h.color === "green" ? "bg-emerald-200/90" : "bg-sky-200/90";
+                    h.color === "yellow" ? "bg-yellow-200/90" : h.color === "green" ? "bg-green-200/90" : "bg-sky-200/90";
 
                 newParts.push(
                     <span
@@ -552,11 +554,8 @@ export default function TestRunner({
     const rightActionLabelStr =
         qIndex === totalQs - 1 ? (stepIndex === steps.length - 1 ? "Submit" : "End Module") : "Next";
 
-    const onRightAction = async () => {
-        if (qIndex < totalQs - 1) {
-            setQIndex((i) => Math.min(totalQs - 1, i + 1));
-            return;
-        }
+    const handleEndConfirmed = async () => {
+        setShowConfirmEnd(false);
 
         if (stepIndex === steps.length - 1) {
             // SUBMIT TEST
@@ -598,6 +597,16 @@ export default function TestRunner({
 
         setStepIndex((i) => Math.min(i + 1, steps.length - 1));
         setHasStarted(true);
+        setQIndex(0); // Reset Q index for next module
+    };
+
+    const onRightAction = async () => {
+        if (qIndex < totalQs - 1) {
+            setQIndex((i) => Math.min(totalQs - 1, i + 1));
+            return;
+        }
+
+        setShowConfirmEnd(true);
     };
 
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -772,7 +781,7 @@ export default function TestRunner({
                                     <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Highlight</div>
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => applyHighlight("yellow")} className="w-10 h-10 rounded-full bg-yellow-200 border-2 border-yellow-300 hover:scale-110 transition shrink-0" title="Yellow" />
-                                        <button onClick={() => applyHighlight("green")} className="w-10 h-10 rounded-full bg-emerald-200 border-2 border-emerald-300 hover:scale-110 transition shrink-0" title="Green" />
+                                        <button onClick={() => applyHighlight("green")} className="w-10 h-10 rounded-full bg-green-200 border-2 border-green-300 hover:scale-110 transition shrink-0" title="Green" />
                                         <button onClick={() => applyHighlight("blue")} className="w-10 h-10 rounded-full bg-sky-200 border-2 border-sky-300 hover:scale-110 transition shrink-0" title="Blue" />
                                         <button
                                             onClick={() => {
@@ -1024,7 +1033,7 @@ export default function TestRunner({
                                         onClick={onRightAction}
                                         className={cx(
                                             "px-8 py-2.5 rounded-full text-white font-bold",
-                                            qIndex === totalQs - 1 ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
+                                            qIndex === totalQs - 1 ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
                                         )}
                                     >
                                         {rightActionLabelStr}
@@ -1034,6 +1043,38 @@ export default function TestRunner({
 
                             <DesmosPanel open={isMath && showDesmosPanel} onClose={() => setShowDesmosPanel(false)} />
                             <ReferencePanel open={isMath && showRefPanel} onClose={() => setShowRefPanel(false)} />
+
+                            <Modal open={showConfirmEnd} title="End of Section" onClose={() => setShowConfirmEnd(false)} maxWidthClass="max-w-md">
+                                <div className="p-4">
+                                    <h2 className="text-xl font-bold text-slate-900 mb-2">Are you sure?</h2>
+                                    <p className="text-slate-600 mb-6 text-sm">
+                                        You are at the end of <b>{step.label}</b>. 
+                                        {totalQs - answeredSet.size > 0 ? (
+                                            <span className="block mt-2 text-red-600 font-bold">
+                                                Warning: You have {totalQs - answeredSet.size} unanswered questions in this section!
+                                            </span>
+                                        ) : (
+                                            <span className="block mt-2">You have answered all questions in this section.</span>
+                                        )}
+                                        <span className="block mt-4">Once you leave this section, you cannot return to it. Do you want to continue?</span>
+                                    </p>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setShowConfirmEnd(false)}
+                                            className="flex-1 px-4 py-2.5 rounded-xl border-2 font-bold text-slate-600 hover:bg-slate-50 transition"
+                                        >
+                                            No, Stay Here
+                                        </button>
+                                        <button
+                                            onClick={handleEndConfirmed}
+                                            className="flex-1 px-4 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition"
+                                        >
+                                            Yes, End Section
+                                        </button>
+                                    </div>
+                                </div>
+                            </Modal>
                         </>
                     )}
                 </>

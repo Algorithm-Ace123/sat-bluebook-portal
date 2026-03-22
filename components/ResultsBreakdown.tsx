@@ -72,10 +72,6 @@ export default function ResultsBreakdown({
     const answersMap = new Map<string, any>(answersMapList);
 
     const [filter, setFilter] = useState<"ALL" | "CORRECT" | "INCORRECT" | "OMITTED">("ALL");
-    const [evaluation, setEvaluation] = useState<string | null>(null);
-    const [loadingEval, setLoadingEval] = useState(false);
-    const [explanations, setExplanations] = useState<Record<string, any>>({});
-    const [loadingExp, setLoadingExp] = useState<Record<string, boolean>>({});
     const [retrying, setRetrying] = useState<Record<string, boolean>>({});
     const [retryAnswers, setRetryAnswers] = useState<Record<string, any>>({});
     const [retryStatus, setRetryStatus] = useState<Record<string, "correct" | "incorrect">>({});
@@ -101,133 +97,8 @@ export default function ResultsBreakdown({
         setRetryStatus(prev => ({ ...prev, [qid]: isCorrectMatch ? "correct" : "incorrect" }));
     };
 
-    const handleEvaluation = async () => {
-        setLoadingEval(true);
-        try {
-            // Build performance payload
-            const testPerformance = (testJson.modules ?? []).flatMap((mod: any, modIdx: number) => {
-                return (mod.items ?? []).map((item: any, itemIdx: number) => {
-                    const qid = item.id != null ? String(item.id) : `qidx:${modIdx}:${itemIdx}`;
-                    const studentData = answersMap.get(qid);
-                    const isCorrect = !!studentData?.is_correct;
-                    const isOmitted = !studentData?.answer || (item.kind === "mcq" ? !studentData.answer.choiceId : String(studentData.answer.value || "").trim() === "");
-                    const rawPrompt = getPromptText(item);
-                    const promptText = typeof rawPrompt === "string" ? rawPrompt : "";
-                    
-                    return {
-                        section: modIdx < 2 ? "RW" : "Math",
-                        module: modIdx % 2 + 1,
-                        isCorrect,
-                        isOmitted,
-                        preview: promptText.substring(0, 120)
-                    };
-                });
-            });
-
-            const res = await fetch("/api/ai/evaluation", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ rwScaled, mathScaled, testPerformance })
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                console.error("Evaluation API Error:", res.status, text);
-                setEvaluation("An error occurred while generating evaluation. Please ensure Pramana Bot API key is configured.");
-                setLoadingEval(false);
-                return;
-            }
-
-            const data = await res.json();
-            if (data.evaluation) setEvaluation(data.evaluation);
-            else console.error(data.error || "Failed to get evaluation.");
-        } catch (e: any) { 
-            console.error("Error connecting to evaluation API:", e); 
-            setEvaluation(`Failed to evaluate test performance. Reason: ${e.message}`);
-        }
-        setLoadingEval(false);
-    };
-
-    const hasRequestedEval = useRef(false);
-    useEffect(() => {
-        if (!hasRequestedEval.current) {
-            hasRequestedEval.current = true;
-            handleEvaluation();
-        }
-    }, []);
-
-    const handleExplain = async (qid: string, item: any, isCorrect: boolean, studentAnswer: any) => {
-        const isGraphMatch = JSON.stringify(item).toLowerCase().includes("graph") || JSON.stringify(item).toLowerCase().includes("image");
-        if (isGraphMatch) {
-            setExplanations(prev => ({ 
-                ...prev, 
-                [qid]: { 
-                    correct_rationale: "Pramana bot is not authorized to explain graph/image questions. Please contact your teacher.", 
-                    incorrect_rationales: [], 
-                    tips: "" 
-                } 
-            }));
-            return;
-        }
-
-        setLoadingExp(prev => ({ ...prev, [qid]: true }));
-        try {
-            const res = await fetch("/api/ai/explanation", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question: item, answer: studentAnswer || "Omitted", isCorrect })
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                console.error("Explanation API Error:", res.status, text);
-                alert("Explanation failed. Ensure OPENAI_API_KEY is configured.");
-                setLoadingExp(prev => ({ ...prev, [qid]: false }));
-                return;
-            }
-
-            const data = await res.json();
-            if (data.explanation) {
-                try {
-                    const parsed = JSON.parse(data.explanation);
-                    setExplanations(prev => ({ ...prev, [qid]: parsed }));
-                } catch (e) {
-                    console.error("Failed to parse explanation JSON:", e, data.explanation);
-                    alert("Failed to parse explanation format.");
-                }
-            }
-            else alert(data.error || "Failed to get explanation.");
-        } catch (e: any) { alert("Error connecting to explanation API."); }
-        setLoadingExp(prev => ({ ...prev, [qid]: false }));
-    };
-
     return (
         <div className="max-w-6xl mx-auto px-6 mt-12 space-y-12">
-
-            {/* AI Evaluation */}
-            <div className="bg-slate-900 text-white p-8 rounded-[32px] shadow-lg mb-10 overflow-hidden relative">
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 border-4 border-slate-800 shadow-xl">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-2xl font-bold">Pramana Bot Overall Evaluation</h2>
-                        <p className="text-slate-400 mt-2 text-sm max-w-2xl">Pramana Bot generates a comprehensive analysis of your performance across modules, highlighting your strongest areas and identifying weaknesses.</p>
-                        
-                        {!evaluation ? (
-                            <div className="mt-6 flex items-center justify-center md:justify-start gap-3 text-blue-400 font-medium">
-                                <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                Pramana Bot is analyzing your test...
-                            </div>
-                        ) : (
-                            <div className="mt-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50">
-                                <RichTextRender nodes={[{ type: 'text', text: evaluation }]} />
-                                <div className="text-xs text-slate-500 mt-4 uppercase tracking-widest font-bold">Automatic Generative Feedback by Pramana Bot</div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             {/* Filters & Module Performance Overview */}
             <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
@@ -239,7 +110,7 @@ export default function ResultsBreakdown({
                                 <div className="text-[10px] font-bold text-slate-500 uppercase">{name}</div>
                                 <div className="text-xl font-bold mt-1 text-slate-800">{modStats[i]?.correct ?? 0} / {modStats[i]?.total ?? 0}</div>
                                 <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                                    <div className="bg-blue-500 h-full" style={{ width: `${Math.round(((modStats[i]?.correct ?? 0) / Math.max(1, modStats[i]?.total ?? 1)) * 100)}%` }} />
+                                    <div className="bg-green-500 h-full" style={{ width: `${Math.round(((modStats[i]?.correct ?? 0) / Math.max(1, modStats[i]?.total ?? 1)) * 100)}%` }} />
                                 </div>
                             </div>
                         ))}
@@ -329,7 +200,7 @@ export default function ResultsBreakdown({
                                             )}
                                             <div className={!hasStimulus ? "ml-auto" : ""}>
                                                 {isCorrect ? (
-                                                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-emerald-200">
+                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-green-200">
                                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                         Correct
                                                     </span>
@@ -388,7 +259,7 @@ export default function ResultsBreakdown({
 
                                                         if (retryStatus[qid] === "correct") {
                                                             if (isRight) {
-                                                                box = "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500 ring-offset-1";
+                                                                box = "border-green-500 bg-green-50 ring-2 ring-green-500 ring-offset-1";
                                                                 badge = "Correct!";
                                                             } else if (isWrong) {
                                                                 box = "border-red-300 bg-red-50/50 opacity-50";
@@ -406,12 +277,12 @@ export default function ResultsBreakdown({
                                                     } else {
                                                         // Static mode
                                                         if (isSelected) {
-                                                            box = isCorrect ? "border-emerald-500 bg-emerald-50" : "border-red-500 bg-red-50";
+                                                            box = isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50";
                                                             badge = "Your Choice";
                                                         }
                                                         if (showSolutions && isAnswerKey) {
                                                             if (!isCorrect) {
-                                                                box = "border-emerald-500 ring-2 ring-emerald-500 ring-offset-2 bg-white";
+                                                                box = "border-green-500 ring-2 ring-green-500 ring-offset-2 bg-white";
                                                                 badge = "Correct Answer";
                                                             } else if (isSelected) {
                                                                 badge = "Your Choice";
@@ -426,11 +297,11 @@ export default function ResultsBreakdown({
                                                             <div className="flex items-start gap-4">
                                                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${
                                                                     retrying[qid] ? (
-                                                                        retryStatus[qid] === "correct" && (retryAnswers[qid]||{})[choice.id] === true ? "bg-emerald-600 border-emerald-600 text-white" :
+                                                                        retryStatus[qid] === "correct" && (retryAnswers[qid]||{})[choice.id] === true ? "bg-green-600 border-green-600 text-white" :
                                                                         (retryAnswers[qid]||{})[choice.id] === false ? "bg-red-500/50 border-red-500/50 text-white" :
                                                                         "border-slate-300 text-slate-500 group-hover:bg-slate-100"
                                                                     ) : (
-                                                                        isSelected ? (isCorrect ? "bg-emerald-600 border-emerald-600 text-white" : "bg-red-600 border-red-600 text-white") : "border-slate-200 text-slate-400"
+                                                                        isSelected ? (isCorrect ? "bg-green-600 border-green-600 text-white" : "bg-red-600 border-red-600 text-white") : "border-slate-200 text-slate-400"
                                                                     )
                                                                 }`}>
                                                                     {choice.id}
@@ -441,7 +312,7 @@ export default function ResultsBreakdown({
                                                                 </div>
                                                             </div>
                                                             {badge && (
-                                                                <div className={`absolute top-2 right-3 text-[9px] font-black uppercase tracking-widest ${(badge === "Correct Answer" || badge === "Correct!") ? "text-emerald-600" : (isCorrect || retrying[qid]) ? "text-red-500" : "text-red-600"}`}>
+                                                                <div className={`absolute top-2 right-3 text-[9px] font-black uppercase tracking-widest ${(badge === "Correct Answer" || badge === "Correct!") ? "text-green-600" : (isCorrect || retrying[qid]) ? "text-red-500" : "text-red-600"}`}>
                                                                     {badge}
                                                                 </div>
                                                             )}
@@ -451,12 +322,12 @@ export default function ResultsBreakdown({
                                             ) : (
                                                 <div className="space-y-4">
                                                     {retrying[qid] ? (
-                                                        <div className={`p-6 rounded-xl border-2 transition ${retryStatus[qid] === 'correct' ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500 ring-offset-2' : retryStatus[qid] === 'incorrect' ? 'bg-red-50 border-red-500 ring-2 ring-red-500 ring-offset-2' : 'bg-blue-50/50 border-blue-200'}`}>
+                                                        <div className={`p-6 rounded-xl border-2 transition ${retryStatus[qid] === 'correct' ? 'bg-green-50 border-green-500 ring-2 ring-green-500 ring-offset-2' : retryStatus[qid] === 'incorrect' ? 'bg-red-50 border-red-500 ring-2 ring-red-500 ring-offset-2' : 'bg-slate-50 border-slate-200'}`}>
                                                             <label className="text-[10px] font-black uppercase tracking-widest block mb-3 text-slate-600">Retry Mode: Enter your answer</label>
                                                             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
                                                                 <input 
                                                                     type="text" 
-                                                                    className="flex-1 bg-white border-2 border-slate-300 rounded-xl px-4 py-3 font-mono text-lg outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-bold text-slate-800"
+                                                                    className="flex-1 bg-white border-2 border-slate-300 rounded-xl px-4 py-3 font-mono text-lg outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all font-bold text-slate-800"
                                                                     placeholder="Type your answer here..."
                                                                     defaultValue={retryAnswers[qid] || ""}
                                                                     disabled={retryStatus[qid] === "correct"}
@@ -477,7 +348,7 @@ export default function ResultsBreakdown({
                                                                         Submit
                                                                     </button>
                                                                 ) : (
-                                                                    <div className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 cursor-default shrink-0">
+                                                                    <div className="bg-green-600 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 cursor-default shrink-0">
                                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                                         Correct!
                                                                     </div>
@@ -491,17 +362,17 @@ export default function ResultsBreakdown({
                                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
                                                                     Your Answer
                                                                 </label>
-                                                                <div className={`text-2xl font-mono font-bold ${isCorrect ? "text-emerald-600" : isOmitted ? "text-slate-500" : "text-red-600"}`}>
+                                                                <div className={`text-2xl font-mono font-bold ${isCorrect ? "text-green-600" : isOmitted ? "text-slate-500" : "text-red-600"}`}>
                                                                     {answer?.value || <span className="text-slate-400 italic font-sans text-sm">Omitted / No Answer</span>}
                                                                 </div>
                                                             </div>
 
                                                             {showSolutions && !isCorrect && Array.isArray(item.answer?.accepted) && (
-                                                                <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-200">
-                                                                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2">
+                                                                <div className="p-6 bg-green-50 rounded-xl border border-green-200">
+                                                                    <label className="text-[10px] font-black text-green-600 uppercase tracking-widest block mb-2">
                                                                         Accepted Answer(s)
                                                                     </label>
-                                                                    <div className="text-lg font-bold text-emerald-800 space-y-2">
+                                                                    <div className="text-lg font-bold text-green-800 space-y-2">
                                                                         {item.answer.accepted.map((acc: any, i: number) => {
                                                                             const val = String(acc?.value ?? "");
                                                                             const frac = isFractionString(val) ? toFractionLatex(val) : null;
@@ -530,81 +401,18 @@ export default function ResultsBreakdown({
                                                         setRetryStatus(prev => { const n={...prev}; delete n[qid]; return n; });
                                                     }
                                                 }} className={`text-xs uppercase tracking-widest font-black flex items-center gap-2 transition px-4 py-2 rounded-lg border-2 ${retrying[qid] ? "text-red-500 border-red-100 bg-red-50/50 hover:bg-red-100" : "text-slate-500 border-slate-100 bg-slate-50 hover:bg-slate-100"}`}>
-                                                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                                     {retrying[qid] ? "Give Up / Show Original Results" : "Retry This Question"}
                                                 </button>
                                             </div>
                                         )}
-
-                                        {/* AI Explanation Block */}
-                                        <div className="mt-6 pt-6 border-t border-slate-200">
-                                            {!explanations[qid] ? (
-                                                <button onClick={() => handleExplain(qid, item, isCorrect, answer)} disabled={loadingExp[qid]} className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2">
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                                    {loadingExp[qid] ? "Pramana Bot is analyzing..." : "Ask Pramana Bot for an Explanation"}
-                                                </button>
-                                            ) : (
-                                                <div className="bg-white p-6 rounded-2xl border shadow-sm">
-                                                    <div className="flex items-center gap-3 mb-6">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                                        </div>
-                                                        <div className="font-bold text-slate-800">Pramana Bot Explanation</div>
-                                                    </div>
-                                                    
-                                                    <div className="space-y-6">
-                                                        {explanations[qid].correct_rationale && (
-                                                            <div>
-                                                                <h4 className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                                                    Why It&apos;s Correct
-                                                                </h4>
-                                                                <div className="text-slate-700 text-sm leading-relaxed">
-                                                                    <RichTextRender nodes={[{ type: 'text', text: explanations[qid].correct_rationale }]} />
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {(explanations[qid].incorrect_rationales || []).length > 0 && (
-                                                            <div>
-                                                                <div className="h-px bg-slate-100 my-4" />
-                                                                <h4 className="text-[11px] font-black text-red-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                                    Why Others Are Incorrect
-                                                                </h4>
-                                                                <div className="space-y-3">
-                                                                    {explanations[qid].incorrect_rationales.map((ir: any, idx: number) => (
-                                                                        <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                                                            <div className="font-bold text-slate-800 text-xs mb-2">Option {ir.option}</div>
-                                                                            <div className="text-slate-600 text-sm leading-relaxed">
-                                                                                <RichTextRender nodes={[{ type: 'text', text: ir.rationale }]} />
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {explanations[qid].tips && (
-                                                            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 mt-2">
-                                                                <div className="font-bold text-[11px] uppercase tracking-widest mb-2">Pramana Tip</div>
-                                                                <div className="text-sm font-medium leading-relaxed">
-                                                                    <RichTextRender nodes={[{ type: 'text', text: explanations[qid].tips }]} />
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
-
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
+                                );
+                            })}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
