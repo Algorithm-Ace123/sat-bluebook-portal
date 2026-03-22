@@ -88,6 +88,20 @@ function toFractionLatex(v: string) {
     return `${neg}\\frac{${a}}{${b}}`;
 }
 
+// ---------- Getter Helpers ----------
+function getRWStimulusBlocks(q: any): any[] {
+    if (Array.isArray(q?.stimulus)) return q.stimulus;
+    if (Array.isArray(q?.stimulus?.content)) return q.stimulus.content;
+    return [];
+}
+
+function renderChoiceContent(c: any) {
+    if (Array.isArray(c?.content)) return <RichTextRender nodes={c.content} />;
+    if (typeof c?.text === "string") return <div>{c.text}</div>;
+    if (typeof c?.latex === "string" && c.latex.trim()) return <Latex latex={c.latex} />;
+    return null;
+}
+
 export default async function ResultsPage({ params }: { params: { attemptId: string } }) {
     const supabase = await supabaseServer();
     const { attemptId } = params;
@@ -241,8 +255,8 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
                                             Question {itemIdx + 1}
                                         </div>
 
-                                        {item.stimulus?.content?.length ? (
-                                            <StimulusRender blocks={item.stimulus.content} />
+                                        {getRWStimulusBlocks(item).length > 0 ? (
+                                            <StimulusRender blocks={getRWStimulusBlocks(item)} />
                                         ) : (
                                             <div className="text-xs text-slate-400 italic">No passage/stimulus for this question.</div>
                                         )}
@@ -330,7 +344,8 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
                                                                     {choice.id}
                                                                 </div>
                                                                 <div className="flex-1 pt-0.5 text-sm font-medium text-slate-700">
-                                                                    {choice.content ? <RichTextRender nodes={choice.content} /> : choice.text}
+                                                                    {renderChoiceContent(choice)}
+                                                                    {choice.image && <img src={choice.image.src || choice.image.url} alt={choice.image.alt || ""} className="mt-2 max-w-[200px]" />}
                                                                 </div>
                                                             </div>
 
