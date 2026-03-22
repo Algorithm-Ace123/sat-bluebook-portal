@@ -7,6 +7,7 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { calculateSectionScore, inferRoute, Route } from "@/lib/scoring";
+import ResultsBreakdown from "@/components/ResultsBreakdown";
 
 export const dynamic = "force-dynamic";
 
@@ -236,195 +237,15 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
                 </div>
             </div>
 
-            {/* Modules */}
-            <div className="max-w-6xl mx-auto px-6 mt-12 space-y-12">
-                {(testJson.modules ?? []).map((mod: any, modIdx: number) => (
-                    <div key={mod.id ?? modIdx} className="space-y-6">
-                        <div className="flex items-center gap-4">
-                            <div className="h-px bg-slate-200 flex-1" />
-                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">
-                                {modIdx < 2 ? "Reading & Writing" : "Mathematics"} - Module {modIdx % 2 + 1}
-                            </h2>
-                            <div className="h-px bg-slate-200 flex-1" />
-                        </div>
-
-                        {(mod.items ?? []).map((item: any, itemIdx: number) => {
-                            const qid = item.id != null ? String(item.id) : `qidx:${modIdx}:${itemIdx}`;
-                            const studentData = answersMap.get(qid);
-                            const answer = studentData?.answer;
-                            const isCorrect = !!studentData?.is_correct;
-
-                            // Prompt rendering fallback
-                            const promptNodes = getPromptNodes(item);
-                            const promptLatex = getPromptLatex(item);
-                            const promptText = getPromptText(item);
-                            const promptBlocks = getPromptBlocks(item);
-
-                            const rwStimulus = getRWStimulusBlocks(item);
-                            const hasStimulus = item.kind !== "frq_math" && rwStimulus.length > 0;
-
-                            return (
-                                <div
-                                    key={qid}
-                                    className="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[380px]"
-                                >
-                                    {/* Left pane: stimulus */}
-                                    {hasStimulus && (
-                                        <div className="w-full md:w-1/2 p-8 border-b md:border-b-0 md:border-r overflow-y-auto max-h-[650px] bg-white prose-sm prose-slate">
-                                            <div className="mb-4 inline-block px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">
-                                                Question {itemIdx + 1}
-                                            </div>
-                                            <StimulusRender blocks={rwStimulus} />
-                                        </div>
-                                    )}
-
-                                    {/* Right pane */}
-                                    <div className={`flex flex-col p-8 bg-slate-50/30 ${hasStimulus ? "w-full md:w-1/2" : "w-full"}`}>
-                                        <div className="flex items-center justify-between mb-6">
-                                            {!hasStimulus && (
-                                                <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider self-start mr-4">
-                                                    Question {itemIdx + 1}
-                                                </div>
-                                            )}
-                                            <div className={!hasStimulus ? "ml-auto" : ""}>
-                                                {isCorrect ? (
-                                                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-emerald-200">
-                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        Correct
-                                                    </span>
-                                                ) : (
-                                                    <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-red-100">
-                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                        Incorrect
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Prompt + promptBlocks */}
-                                        <div className="mb-6 space-y-3 text-slate-800">
-                                            {Array.isArray(promptNodes) && promptNodes.length > 0 ? (
-                                                <div className="text-base font-medium">
-                                                    <RichTextRender nodes={promptNodes} />
-                                                </div>
-                                            ) : promptLatex ? (
-                                                <div className="text-lg font-medium">
-                                                    <Latex latex={promptLatex} />
-                                                </div>
-                                            ) : (
-                                                <p className="text-base font-medium">{promptText}</p>
-                                            )}
-
-                                            {Array.isArray(promptBlocks) && promptBlocks.length > 0 && (
-                                                <div className="bg-white rounded-xl border p-3">
-                                                    <StimulusRender blocks={promptBlocks} variant="prompt" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Answers */}
-                                        <div className="space-y-4">
-                                            {item.kind === "mcq" ? (
-                                                (item.choices ?? []).map((choice: any) => {
-                                                    const isSelected = answer?.choiceId === choice.id;
-                                                    const isAnswerKey = choice.id === item.answer?.correct;
-
-                                                    // Base style
-                                                    let box = "border-slate-200 bg-white";
-                                                    let badge: string | null = null;
-
-                                                    if (isSelected) {
-                                                        box = isCorrect ? "border-emerald-500 bg-emerald-50" : "border-red-500 bg-red-50";
-                                                        badge = "Your Choice";
-                                                    }
-
-                                                    if (showSolutions && isAnswerKey) {
-                                                        // if incorrect, highlight correct answer too
-                                                        if (!isCorrect) {
-                                                            box = "border-emerald-500 ring-2 ring-emerald-500 ring-offset-2 bg-white";
-                                                            badge = "Correct Answer";
-                                                        } else if (isSelected) {
-                                                            // your choice and correct
-                                                            badge = "Your Choice";
-                                                        } else {
-                                                            badge = "Correct Answer";
-                                                        }
-                                                    }
-
-                                                    return (
-                                                        <div key={choice.id} className={`p-4 rounded-xl border-2 transition ${box} relative`}>
-                                                            <div className="flex items-start gap-4">
-                                                                <div
-                                                                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 ${isSelected
-                                                                        ? (isCorrect ? "bg-emerald-600 border-emerald-600 text-white" : "bg-red-600 border-red-600 text-white")
-                                                                        : "border-slate-200 text-slate-400"
-                                                                        }`}
-                                                                >
-                                                                    {choice.id}
-                                                                </div>
-                                                                <div className="flex-1 pt-0.5 text-sm font-medium text-slate-700">
-                                                                    {renderChoiceContent(choice)}
-                                                                    {choice.image && <img src={choice.image.src || choice.image.url} alt={choice.image.alt || ""} className="mt-2 max-w-[200px]" />}
-                                                                </div>
-                                                            </div>
-
-                                                            {badge && (
-                                                                <div
-                                                                    className={`absolute top-2 right-3 text-[9px] font-black uppercase ${badge === "Correct Answer" ? "text-emerald-600" : isCorrect ? "text-emerald-600" : "text-red-600"
-                                                                        }`}
-                                                                >
-                                                                    {badge}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    <div className="p-6 bg-slate-100 rounded-xl border border-slate-200">
-                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
-                                                            Your Answer
-                                                        </label>
-                                                        <div className={`text-2xl font-mono font-bold ${isCorrect ? "text-emerald-600" : "text-red-600"}`}>
-                                                            {answer?.value || <span className="text-slate-300">No answer provided</span>}
-                                                        </div>
-                                                    </div>
-
-                                                    {showSolutions && !isCorrect && Array.isArray(item.answer?.accepted) && (
-                                                        <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-200">
-                                                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2">
-                                                                Accepted Answer(s)
-                                                            </label>
-                                                            <div className="text-lg font-bold text-emerald-800 space-y-2">
-                                                                {item.answer.accepted.map((acc: any, i: number) => {
-                                                                    const val = String(acc?.value ?? "");
-                                                                    const frac = isFractionString(val) ? toFractionLatex(val) : null;
-                                                                    return (
-                                                                        <div key={i} className="flex items-center gap-2">
-                                                                            {frac ? <Latex latex={frac} /> : <span className="font-mono">{val}</span>}
-                                                                            {i < item.answer.accepted.length - 1 && (
-                                                                                <span className="text-slate-400 font-black text-xs uppercase">or</span>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
+            {/* Modules / Breakdown Component */}
+            <ResultsBreakdown
+                testJson={testJson}
+                answersMapList={Array.from(answersMap.entries())}
+                showSolutions={showSolutions}
+                modStats={modStats}
+                rwScaled={rwScaled}
+                mathScaled={mathScaled}
+            />
         </div>
     );
 }

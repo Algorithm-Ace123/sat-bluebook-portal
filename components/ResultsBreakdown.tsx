@@ -1,0 +1,405 @@
+"use client";
+
+import { useState } from "react";
+import StimulusRender from "@/components/StimulusRender";
+import RichTextRender from "@/components/RichTextRender";
+import katex from "katex";
+import "katex/dist/katex.min.css";
+
+function Latex({ latex }: { latex: string }) {
+    const html = katex.renderToString(latex, { throwOnError: false });
+    return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// ---------- FRQ accepted rendering ----------
+function isFractionString(v: string) {
+    return /^\s*-?\d+\s*\/\s*\d+\s*$/.test(v);
+}
+function toFractionLatex(v: string) {
+    const s = v.replace(/\s+/g, "");
+    const neg = s.startsWith("-") ? "-" : "";
+    const t = neg ? s.slice(1) : s;
+    const [a, b] = t.split("/");
+    if (!a || !b) return null;
+    return `${neg}\\frac{${a}}{${b}}`;
+}
+
+// ---------- Getter Helpers ----------
+function getRWStimulusBlocks(q: any): any[] {
+    if (Array.isArray(q?.stimulus)) return q.stimulus;
+    if (Array.isArray(q?.stimulus?.content)) return q.stimulus.content;
+    return [];
+}
+function getPromptNodes(q: any): any[] {
+    if (Array.isArray(q?.promptNodes)) return q.promptNodes;
+    if (Array.isArray(q?.question?.prompt)) return q.question.prompt;
+    return [];
+}
+function getPromptLatex(q: any): string | null {
+    return (q?.promptLatex ?? q?.question?.promptLatex ?? null) as string | null;
+}
+function getPromptBlocks(q: any): any[] {
+    if (Array.isArray(q?.promptBlocks)) return q.promptBlocks;
+    if (Array.isArray(q?.question?.promptBlocks)) return q.question.promptBlocks;
+    return [];
+}
+function getPromptText(q: any): string | null {
+    return (q?.prompt ?? q?.question?.prompt ?? null) as string | null;
+}
+
+function renderChoiceContent(c: any) {
+    if (Array.isArray(c?.content)) return <RichTextRender nodes={c.content} />;
+    if (typeof c?.text === "string") return <div>{c.text}</div>;
+    if (typeof c?.latex === "string" && c.latex.trim()) return <Latex latex={c.latex} />;
+    return null;
+}
+
+export default function ResultsBreakdown({
+    testJson,
+    answersMapList,
+    showSolutions,
+    modStats,
+    rwScaled,
+    mathScaled
+}: {
+    testJson: any;
+    answersMapList: any[];
+    showSolutions: boolean;
+    modStats: any[];
+    rwScaled: number;
+    mathScaled: number;
+}) {
+    const answersMap = new Map<string, any>(answersMapList);
+
+    const [filter, setFilter] = useState<"ALL" | "CORRECT" | "INCORRECT" | "OMITTED">("ALL");
+    const [evaluation, setEvaluation] = useState<string | null>(null);
+    const [loadingEval, setLoadingEval] = useState(false);
+    const [explanations, setExplanations] = useState<Record<string, string>>({});
+    const [loadingExp, setLoadingExp] = useState<Record<string, boolean>>({});
+
+    const handleEvaluation = async () => {
+        setLoadingEval(true);
+        try {
+            // Build performance payload
+            const testPerformance = (testJson.modules ?? []).flatMap((mod: any, modIdx: number) => {
+                return (mod.items ?? []).map((item: any, itemIdx: number) => {
+                    const qid = item.id != null ? String(item.id) : `qidx:${modIdx}:${itemIdx}`;
+                    const studentData = answersMap.get(qid);
+                    const isCorrect = !!studentData?.is_correct;
+                    const isOmitted = !studentData?.answer || (item.kind === "mcq" ? !studentData.answer.choiceId : String(studentData.answer.value || "").trim() === "");
+                    const promptText = getPromptText(item) || "";
+                    
+                    return {
+                        section: modIdx < 2 ? "RW" : "Math",
+                        module: modIdx % 2 + 1,
+                        isCorrect,
+                        isOmitted,
+                        preview: promptText.substring(0, 120)
+                    };
+                });
+            });
+
+            const res = await fetch("/api/ai/evaluation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rwScaled, mathScaled, testPerformance })
+            });
+            const data = await res.json();
+            if (data.evaluation) setEvaluation(data.evaluation);
+            else alert(data.error || "Failed to get evaluation. Make sure OPENAI_API_KEY is configured.");
+        } catch (e: any) { alert("Error connecting to evaluation API."); }
+        setLoadingEval(false);
+    };
+
+    const handleExplain = async (qid: string, item: any, isCorrect: boolean, studentAnswer: any) => {
+        setLoadingExp(prev => ({ ...prev, [qid]: true }));
+        try {
+            const res = await fetch("/api/ai/explanation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: item, answer: studentAnswer || "Omitted", isCorrect })
+            });
+            const data = await res.json();
+            if (data.explanation) setExplanations(prev => ({ ...prev, [qid]: data.explanation }));
+            else alert(data.error || "Failed to get explanation. Make sure OPENAI_API_KEY is configured.");
+        } catch (e: any) { alert("Error connecting to explanation API."); }
+        setLoadingExp(prev => ({ ...prev, [qid]: false }));
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto px-6 mt-12 space-y-12">
+
+            {/* AI Evaluation */}
+            <div className="bg-slate-900 text-white p-8 rounded-[32px] shadow-lg mb-10 overflow-hidden relative">
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shrink-0 border-4 border-slate-800 shadow-xl">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                        <h2 className="text-2xl font-bold">Pramana Bot Overall Evaluation</h2>
+                        <p className="text-slate-400 mt-2 text-sm max-w-2xl">Use ChatGPT to generate a comprehensive analysis of your performance across modules, highlighting your strongest areas and identifying weaknesses.</p>
+                        
+                        {!evaluation ? (
+                            <button onClick={handleEvaluation} disabled={loadingEval} className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition flex items-center gap-2 mx-auto md:mx-0">
+                                {loadingEval ? "Analyzing..." : "Ask Pramana Bot for an Evaluation"}
+                            </button>
+                        ) : (
+                            <div className="mt-8 p-6 bg-slate-800/50 rounded-2xl border border-slate-700/50">
+                                <RichTextRender nodes={[{ type: 'text', text: evaluation }]} />
+                                <div className="text-xs text-slate-500 mt-4 uppercase tracking-widest font-bold">Generative AI Response by ChatGPT</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters & Module Performance Overview */}
+            <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
+                <div className="flex-1 bg-white p-6 rounded-2xl border shadow-sm">
+                    <div className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Module Accuracy</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {["RW Module 1", "RW Module 2", "Math Module 1", "Math Module 2"].map((name, i) => (
+                            <div key={i} className="flex flex-col items-center bg-slate-50 p-3 rounded-xl border">
+                                <div className="text-[10px] font-bold text-slate-500 uppercase">{name}</div>
+                                <div className="text-xl font-bold mt-1 text-slate-800">{modStats[i]?.correct ?? 0} / {modStats[i]?.total ?? 0}</div>
+                                <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                                    <div className="bg-blue-500 h-full" style={{ width: `${Math.round(((modStats[i]?.correct ?? 0) / Math.max(1, modStats[i]?.total ?? 1)) * 100)}%` }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl border shadow-sm shrink-0 w-full lg:w-auto">
+                    <div className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Filter Questions</div>
+                    <div className="flex flex-wrap gap-2">
+                        {["ALL", "CORRECT", "INCORRECT", "OMITTED"].map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f as any)}
+                                className={`px-4 py-2 text-xs font-bold rounded-xl border transition ${filter === f ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Questions by Module */}
+            {(testJson.modules ?? []).map((mod: any, modIdx: number) => {
+                const moduleQuestions = (mod.items ?? []).map((item: any, itemIdx: number) => {
+                    const qid = item.id != null ? String(item.id) : `qidx:${modIdx}:${itemIdx}`;
+                    const studentData = answersMap.get(qid);
+                    const answer = studentData?.answer;
+                    const isCorrect = !!studentData?.is_correct;
+                    const isOmitted = !answer || (item.kind === "mcq" ? !answer.choiceId : String(answer.value || "").trim() === "");
+                    const isIncorrect = !isCorrect && !isOmitted;
+
+                    return { item, itemIdx, qid, studentData, answer, isCorrect, isOmitted, isIncorrect };
+                });
+
+                const filteredQuestions = moduleQuestions.filter((q: any) => {
+                    if (filter === "CORRECT") return q.isCorrect;
+                    if (filter === "INCORRECT") return q.isIncorrect;
+                    if (filter === "OMITTED") return q.isOmitted;
+                    return true;
+                });
+
+                if (filteredQuestions.length === 0) return null;
+
+                return (
+                    <div key={mod.id ?? modIdx} className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-px bg-slate-200 flex-1" />
+                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">
+                                {modIdx < 2 ? "Reading & Writing" : "Mathematics"} - Module {modIdx % 2 + 1}
+                            </h2>
+                            <div className="h-px bg-slate-200 flex-1" />
+                        </div>
+
+                        {filteredQuestions.map(({ item, itemIdx, qid, studentData, answer, isCorrect, isOmitted, isIncorrect }: any) => {
+                            // Prompt rendering fallback
+                            const promptNodes = getPromptNodes(item);
+                            const promptLatex = getPromptLatex(item);
+                            const promptText = getPromptText(item);
+                            const promptBlocks = getPromptBlocks(item);
+
+                            const rwStimulus = getRWStimulusBlocks(item);
+                            const hasStimulus = item.kind !== "frq_math" && rwStimulus.length > 0;
+
+                            return (
+                                <div
+                                    key={qid}
+                                    className="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col md:flex-row min-h-[380px]"
+                                >
+                                    {/* Left pane: stimulus */}
+                                    {hasStimulus && (
+                                        <div className="w-full md:w-1/2 p-8 border-b md:border-b-0 md:border-r overflow-y-auto max-h-[650px] bg-white prose-sm prose-slate">
+                                            <div className="mb-4 inline-block px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                Question {itemIdx + 1}
+                                            </div>
+                                            <StimulusRender blocks={rwStimulus} />
+                                        </div>
+                                    )}
+
+                                    {/* Right pane */}
+                                    <div className={`flex flex-col p-8 bg-slate-50/30 ${hasStimulus ? "w-full md:w-1/2" : "w-full"}`}>
+                                        <div className="flex items-center justify-between mb-6">
+                                            {!hasStimulus && (
+                                                <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider self-start mr-4">
+                                                    Question {itemIdx + 1}
+                                                </div>
+                                            )}
+                                            <div className={!hasStimulus ? "ml-auto" : ""}>
+                                                {isCorrect ? (
+                                                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-emerald-200">
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                        Correct
+                                                    </span>
+                                                ) : isOmitted ? (
+                                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-slate-300">
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Omitted
+                                                    </span>
+                                                ) : (
+                                                    <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-red-100">
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        Incorrect
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Prompt + promptBlocks */}
+                                        <div className="mb-6 space-y-3 text-slate-800">
+                                            {Array.isArray(promptNodes) && promptNodes.length > 0 ? (
+                                                <div className="text-base font-medium">
+                                                    <RichTextRender nodes={promptNodes} />
+                                                </div>
+                                            ) : promptLatex ? (
+                                                <div className="text-lg font-medium">
+                                                    <Latex latex={promptLatex} />
+                                                </div>
+                                            ) : (
+                                                <p className="text-base font-medium">{promptText}</p>
+                                            )}
+
+                                            {Array.isArray(promptBlocks) && promptBlocks.length > 0 && (
+                                                <div className="bg-white rounded-xl border p-3">
+                                                    <StimulusRender blocks={promptBlocks} variant="prompt" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Answers */}
+                                        <div className="space-y-4">
+                                            {item.kind === "mcq" ? (
+                                                (item.choices ?? []).map((choice: any) => {
+                                                    const isSelected = answer?.choiceId === choice.id;
+                                                    const isAnswerKey = choice.id === item.answer?.correct;
+
+                                                    let box = "border-slate-200 bg-white";
+                                                    let badge: string | null = null;
+
+                                                    if (isSelected) {
+                                                        box = isCorrect ? "border-emerald-500 bg-emerald-50" : "border-red-500 bg-red-50";
+                                                        badge = "Your Choice";
+                                                    }
+
+                                                    if (showSolutions && isAnswerKey) {
+                                                        if (!isCorrect) {
+                                                            box = "border-emerald-500 ring-2 ring-emerald-500 ring-offset-2 bg-white";
+                                                            badge = "Correct Answer";
+                                                        } else if (isSelected) {
+                                                            badge = "Your Choice";
+                                                        } else {
+                                                            badge = "Correct Answer";
+                                                        }
+                                                    }
+
+                                                    return (
+                                                        <div key={choice.id} className={`p-4 rounded-xl border-2 transition ${box} relative`}>
+                                                            <div className="flex items-start gap-4">
+                                                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 ${isSelected ? (isCorrect ? "bg-emerald-600 border-emerald-600 text-white" : "bg-red-600 border-red-600 text-white") : "border-slate-200 text-slate-400"}`}>
+                                                                    {choice.id}
+                                                                </div>
+                                                                <div className="flex-1 pt-0.5 text-sm font-medium text-slate-700">
+                                                                    {renderChoiceContent(choice)}
+                                                                    {choice.image && <img src={choice.image.src || choice.image.url} alt={choice.image.alt || ""} className="mt-2 max-w-[200px]" />}
+                                                                </div>
+                                                            </div>
+                                                            {badge && (
+                                                                <div className={`absolute top-2 right-3 text-[9px] font-black uppercase ${badge === "Correct Answer" ? "text-emerald-600" : isCorrect ? "text-emerald-600" : "text-red-600"}`}>
+                                                                    {badge}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <div className="p-6 bg-slate-100 rounded-xl border border-slate-200">
+                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                                                            Your Answer
+                                                        </label>
+                                                        <div className={`text-2xl font-mono font-bold ${isCorrect ? "text-emerald-600" : isOmitted ? "text-slate-500" : "text-red-600"}`}>
+                                                            {answer?.value || <span className="text-slate-400 italic font-sans text-sm">Omitted / No Answer</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    {showSolutions && !isCorrect && Array.isArray(item.answer?.accepted) && (
+                                                        <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2">
+                                                                Accepted Answer(s)
+                                                            </label>
+                                                            <div className="text-lg font-bold text-emerald-800 space-y-2">
+                                                                {item.answer.accepted.map((acc: any, i: number) => {
+                                                                    const val = String(acc?.value ?? "");
+                                                                    const frac = isFractionString(val) ? toFractionLatex(val) : null;
+                                                                    return (
+                                                                        <div key={i} className="flex items-center gap-2">
+                                                                            {frac ? <Latex latex={frac} /> : <span className="font-mono">{val}</span>}
+                                                                            {i < item.answer.accepted.length - 1 && <span className="text-slate-400 font-black text-xs uppercase">or</span>}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {/* AI Explanation Block */}
+                                        <div className="mt-6 pt-6 border-t border-slate-200">
+                                            {!explanations[qid] ? (
+                                                <button onClick={() => handleExplain(qid, item, isCorrect, answer)} disabled={loadingExp[qid]} className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                                    {loadingExp[qid] ? "Pramana Bot is analyzing..." : "Ask Pramana Bot for an Explanation"}
+                                                </button>
+                                            ) : (
+                                                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                                        </div>
+                                                        <div className="font-bold text-slate-800">Pramana Bot Explanation</div>
+                                                    </div>
+                                                    <div className="text-slate-700 text-sm prose prose-blue prose-sm max-w-none">
+                                                        <RichTextRender nodes={[{ type: 'text', text: explanations[qid] }]} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
