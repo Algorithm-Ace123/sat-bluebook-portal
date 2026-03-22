@@ -18,6 +18,10 @@ export async function POST(req: Request) {
     const maxAge = 60 * 60 * 24 * 30; // 30 days as reasonable fallback
 
     const response = NextResponse.json({ ok: true });
+    
+    // Prevent edge caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    response.headers.set('Pragma', 'no-cache');
 
     const options = {
       path: '/',

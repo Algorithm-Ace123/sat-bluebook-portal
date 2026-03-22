@@ -14,7 +14,11 @@ export async function GET() {
     const present = !!(data && data.user);
     console.log(`[/api/auth/check] supabase.getUser -> present: ${present}, userId: ${data?.user?.id ?? 'none'}`);
 
-    return NextResponse.json({ ok: true, user: present, cookies: { names: cookieNames, hasSdk, hasLegacy } });
+    const response = NextResponse.json({ ok: true, user: present, cookies: { names: cookieNames, hasSdk, hasLegacy } });
+    // Prevent edge caching to ensure we always check fresh cookies
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    response.headers.set('Pragma', 'no-cache');
+    return response;
   } catch (err: any) {
     console.error('[/api/auth/check] error', err);
     return NextResponse.json({ ok: false, error: err?.message ?? String(err) }, { status: 500 });
