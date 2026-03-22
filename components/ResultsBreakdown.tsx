@@ -156,6 +156,19 @@ export default function ResultsBreakdown({
     }, []);
 
     const handleExplain = async (qid: string, item: any, isCorrect: boolean, studentAnswer: any) => {
+        const isGraphMatch = JSON.stringify(item).toLowerCase().includes("graph") || JSON.stringify(item).toLowerCase().includes("image");
+        if (isGraphMatch) {
+            setExplanations(prev => ({ 
+                ...prev, 
+                [qid]: { 
+                    correct_rationale: "Pramana bot is not authorized to explain graph/image questions. Please contact your teacher.", 
+                    incorrect_rationales: [], 
+                    tips: "" 
+                } 
+            }));
+            return;
+        }
+
         setLoadingExp(prev => ({ ...prev, [qid]: true }));
         try {
             const res = await fetch("/api/ai/explanation", {
