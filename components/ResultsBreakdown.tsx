@@ -111,7 +111,8 @@ export default function ResultsBreakdown({
                     const studentData = answersMap.get(qid);
                     const isCorrect = !!studentData?.is_correct;
                     const isOmitted = !studentData?.answer || (item.kind === "mcq" ? !studentData.answer.choiceId : String(studentData.answer.value || "").trim() === "");
-                    const promptText = getPromptText(item) || "";
+                    const rawPrompt = getPromptText(item);
+                    const promptText = typeof rawPrompt === "string" ? rawPrompt : "";
                     
                     return {
                         section: modIdx < 2 ? "RW" : "Math",
@@ -142,7 +143,7 @@ export default function ResultsBreakdown({
             else console.error(data.error || "Failed to get evaluation.");
         } catch (e: any) { 
             console.error("Error connecting to evaluation API:", e); 
-            setEvaluation("Failed to connect to Pramana Bot API.");
+            setEvaluation(`Failed to evaluate test performance. Reason: ${e.message}`);
         }
         setLoadingEval(false);
     };
