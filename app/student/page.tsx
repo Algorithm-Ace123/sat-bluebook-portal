@@ -106,7 +106,7 @@ export default async function StudentPage() {
                 <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <LogoClient className="h-8" />
-                        <span className="text-xl font-black text-slate-900 tracking-tight">Pramana</span>
+                        <span className="text-xl font-black text-slate-900 tracking-tight">Digital SAT</span>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col items-end">

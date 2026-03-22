@@ -181,31 +181,31 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-[#0f172a] relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
             {/* Background decorative elements */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px]" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-50 rounded-full blur-[120px]" />
 
             <div className="w-full max-w-md relative z-10">
                 <div className="mb-10 flex flex-col items-center">
-                    <InlineLogo className="h-16 mb-4 drop-shadow-2xl" />
-                    <h1 className="text-3xl font-black text-white tracking-tight">Pramana</h1>
+                    <InlineLogo className="h-16 mb-4" />
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Digital SAT</h1>
                     <div className="h-1 w-12 bg-blue-500 rounded-full mt-2" />
                 </div>
 
-                <div className="rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl p-10">
+                <div className="rounded-[32px] bg-white border border-slate-200 shadow-2xl p-10">
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-white">Student Portal</h2>
-                        <p className="text-sm text-slate-400 mt-1">
-                            Log in with the credentials provided by your instructor.
+                        <h2 className="text-xl font-bold text-slate-900 uppercase tracking-widest">Student Portal</h2>
+                        <p className="text-sm text-slate-500 mt-1 uppercase tracking-tight font-bold opacity-60">
+                            Enter your credentials to continue.
                         </p>
                     </div>
 
                     <form onSubmit={onSubmit} className="space-y-6">
                         <div>
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                             <input
-                                className="mt-2 w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-slate-600"
+                                className="mt-2 w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-300"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -216,9 +216,9 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
                             <input
-                                className="mt-2 w-full rounded-2xl bg-white/5 border border-white/10 p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition placeholder:text-slate-600"
+                                className="mt-2 w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-300"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -257,7 +257,7 @@ export default function LoginPage() {
 
                     <div className="mt-8 text-center">
                         <p className="text-xs text-slate-500 font-medium tracking-tight">
-                            Authorized Access Only • Pramana Mock Portal
+                            Authorized Access Only • Mock Portal
                         </p>
                     </div>
                 </div>

@@ -639,12 +639,12 @@ export default function TestRunner({
 
             {/* Global Fullscreen Enforcement Overlay */}
             {hasStarted && !isFullscreen && (
-                <div className="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center text-white p-6 text-center">
-                    <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-8 shadow-xl">
-                        Pramana
+                <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center text-slate-900 p-6 text-center">
+                    <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-8 shadow-2xl">
+                        SAT
                     </div>
                     <h2 className="text-3xl font-bold mb-4">Fullscreen Required</h2>
-                    <p className="text-xl text-slate-300 mb-12 max-w-md">
+                    <p className="text-xl text-slate-600 mb-12 max-w-md font-medium">
                         To continue your SAT mock exam, you must return to fullscreen mode.
                     </p>
                     <button
@@ -654,7 +654,7 @@ export default function TestRunner({
                                 setIsFullscreen(true);
                             }
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-xl font-bold text-xl transition shadow-lg transform hover:scale-105"
+                        className="bg-slate-900 hover:bg-slate-800 text-white px-10 py-5 rounded-2xl font-bold text-xl transition shadow-xl transform active:scale-95"
                     >
                         Return to Fullscreen
                     </button>
@@ -666,10 +666,10 @@ export default function TestRunner({
                 <div className="flex-1 flex flex-col items-center justify-center bg-white">
                     <div className="max-w-2xl w-full px-8 py-12 text-center">
                         <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-8 shadow-xl">
-                            Pramana
+                            SAT
                         </div>
                         <h1 className="text-3xl font-bold mb-4">{test.title || "Practice Test"}</h1>
-                        <p className="text-xl text-slate-600 mb-12">Full Length SAT Mock</p>
+                        <p className="text-xl text-slate-600 mb-12">Full Length SAT Mock Exam</p>
 
                         <div className="grid grid-cols-2 gap-8 text-left mb-12">
                             <div className="flex gap-4">
@@ -767,7 +767,7 @@ export default function TestRunner({
                             </div>
 
                             <div className="h-16 px-10 flex items-center justify-between text-white/70 text-sm">
-                                <div>Pramana</div>
+                                <div>Digital SAT</div>
                                 <div>{remaining === 0 ? "Break complete" : "Break in progress"}</div>
                             </div>
                         </div>
@@ -813,7 +813,7 @@ export default function TestRunner({
                                         {formatTime(remaining)}
                                     </div>
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                                        Pramana Full Length SAT Mock
+                                        Full Length Digital SAT Mock
                                     </div>
                                 </div>
 
@@ -1007,7 +1007,7 @@ export default function TestRunner({
 
                             {/* bottom strip (centered activator) */}
                             <div className="flex-none h-20 border-t bg-white px-8 flex items-center justify-between relative">
-                                <div className="font-bold">Pramana</div>
+                                <div className="font-bold text-slate-400">Digital SAT</div>
 
                                 {/* centered popover activator */}
                                 <button
