@@ -100,42 +100,71 @@ export default async function StudentPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] pb-20">
+        <div className="min-h-screen bg-slate-50 pb-32 font-sans selection:bg-blue-100 selection:text-blue-900">
             {/* Top Navigation */}
-            <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
-                <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <LogoClient className="h-8" />
+            <nav className="bg-white/80 backdrop-blur-xl border-b sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4 group">
+                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center transition-all group-hover:rotate-12 shadow-lg shadow-slate-200">
+                            <LogoClient className="h-6" />
+                        </div>
                         <span className="text-xl font-black text-slate-900 tracking-tight">Digital SAT</span>
                     </div>
                     <div className="flex items-center gap-6">
-                        <div className="flex flex-col items-end">
-                            <span className="text-sm font-bold text-slate-900">{profile?.full_name || "Student"}</span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mock Candidate</span>
+                        <div className="hidden sm:flex flex-col items-end">
+                            <span className="text-sm font-black text-slate-900">{profile?.full_name || "Practice Candidate"}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student Tier</span>
                         </div>
-                        <Link href="/api/auth/logout" className="rounded-xl border bg-white px-4 py-2 font-bold text-xs shadow-sm hover:bg-slate-50 transition text-slate-600">
+                        <Link href="/api/auth/logout" className="rounded-2xl border-2 border-slate-100 bg-white px-5 py-2.5 font-bold text-xs shadow-sm hover:border-red-100 hover:text-red-500 transition-all text-slate-500 active:scale-95">
                             Logout
                         </Link>
                     </div>
                 </div>
-            </div>
+            </nav>
 
             {/* Hero Section */}
-            <div className="bg-white border-b">
-                <div className="max-w-6xl mx-auto px-6 py-12">
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">My Assignments</h1>
-                    <p className="text-lg text-slate-500 font-medium">Track your progress and launch your SAT mock exams.</p>
-                </div>
-            </div>
-
-            <div className="max-w-6xl mx-auto px-6 mt-12">
-                <div className="grid grid-cols-1 gap-6">
-                    {error && (
-                        <div className="rounded-2xl bg-red-50 border border-red-100 p-4 text-sm text-red-600 font-bold">
-                            {error.message}
+            <header className="bg-white border-b overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-[140px] -translate-y-1/2 translate-x-1/2 opacity-70" />
+                <div className="max-w-7xl mx-auto px-8 py-24 relative z-10">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
+                            Mock Ready
                         </div>
-                    )}
+                        <h1 className="text-6xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
+                            Unlock Your <span className="text-blue-600">Potential.</span> Master the SAT.
+                        </h1>
+                        <p className="text-xl text-slate-500 font-medium leading-relaxed mb-12 max-w-2xl">
+                            Welcome back, {profile?.full_name?.split(' ')[0] || "Candidate"}. You have {targets?.length || 0} active mock exams to sharpen your skills and reach your target score.
+                        </p>
+                        
+                        <div className="flex flex-wrap gap-12 items-center border-t border-slate-100 pt-10">
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Mocks Assigned</div>
+                                <div className="text-4xl font-black text-slate-900">{targets?.length || 0}</div>
+                            </div>
+                            <div className="w-px h-12 bg-slate-100 hidden sm:block" />
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status: Completed</div>
+                                <div className="text-4xl font-black text-emerald-600">{attempts?.filter((a:any)=>a.status==='submitted').length || 0}</div>
+                            </div>
+                            <div className="w-px h-12 bg-slate-100 hidden sm:block" />
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Proficiency</div>
+                                <div className="text-4xl font-black text-blue-600">
+                                    {attempts?.length ? Math.round(attempts.reduce((acc: number, a: any) => acc + (a.max_score > 0 ? (a.score / a.max_score) : 0), 0) / attempts.length * 100) : 0}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
+            <main className="max-w-7xl mx-auto px-8 mt-16">
+                <div className="flex items-center justify-between mb-10">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Active Mock Exams</h2>
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
                     {targets?.length ? (
                         targets.map((t: any) => {
                             const attempt = attemptsMap.get(t.assignment_id);
@@ -145,34 +174,34 @@ export default async function StudentPage() {
                             return (
                                 <div
                                     key={t.assignment_id}
-                                    className="rounded-[32px] bg-white border border-slate-200 shadow-sm overflow-hidden p-8 flex flex-col md:flex-row md:items-center justify-between gap-8 transition hover:shadow-xl hover:border-blue-100 group"
+                                    className="rounded-[40px] bg-white border border-slate-200 shadow-sm overflow-hidden p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1 group"
                                 >
-                                    <div className="flex-1 space-y-2">
-                                        <div className="flex items-center gap-3">
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex items-center gap-4">
                                             <span className={cx(
-                                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                                                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 transition-colors",
                                                 isSubmitted ? "bg-emerald-50 text-emerald-600 border-emerald-100" : (attempt ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-blue-50 text-blue-600 border-blue-100")
                                             )}>
                                                 {isSubmitted ? "Completed" : (attempt ? "In Progress" : "Not Started")}
                                             </span>
-                                            <span className="text-slate-300">•</span>
                                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                                {t.assignments?.due_at ? `Due ${new Date(t.assignments.due_at).toLocaleDateString()}` : "No Deadline"}
+                                                {t.assignments?.due_at ? `Expires ${new Date(t.assignments.due_at).toLocaleDateString()}` : "Unlimited Access"}
                                             </span>
                                         </div>
-                                        <h2 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        <h2 className="text-4xl font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">
                                             {t.assignments?.title}
                                         </h2>
+                                        <p className="text-slate-500 font-medium">Digital Practice Assessment • Total Expected Time: 2h 14m</p>
                                     </div>
 
                                     {isSubmitted && (
-                                        <div className="flex items-center gap-8 px-8 border-x border-slate-100 hidden lg:flex">
+                                        <div className="flex items-center gap-12 px-12 border-x border-slate-100 hidden xl:flex">
                                             <div className="text-center">
-                                                <div className="text-3xl font-black text-slate-900 leading-tight">{weightedScore}</div>
+                                                <div className="text-6xl font-black text-slate-900 tracking-tighter leading-none mb-1">{weightedScore}</div>
                                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scaled Score</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-3xl font-black text-emerald-600 leading-tight">
+                                                <div className="text-6xl font-black text-emerald-600 tracking-tighter leading-none mb-1">
                                                     {attempt.max_score > 0 ? Math.round((attempt.score / attempt.max_score) * 100) : 0}%
                                                 </div>
                                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Precision</div>
@@ -184,17 +213,17 @@ export default async function StudentPage() {
                                         {isSubmitted ? (
                                             <Link
                                                 href={`/student/results/${attempt.id}`}
-                                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 text-white px-8 py-4 font-bold hover:bg-slate-800 transition shadow-lg w-full md:w-auto"
+                                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 text-white px-10 py-5 font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 w-full lg:w-auto active:scale-95"
                                             >
-                                                View Detailed Results
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                Review Report
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                                             </Link>
                                         ) : (
-                                            <form action="/api/attempts/start" method="post" className="w-full md:w-auto">
+                                            <form action="/api/attempts/start" method="post" className="w-full lg:w-auto">
                                                 <input type="hidden" name="assignmentId" value={t.assignment_id} />
-                                                <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 text-white px-8 py-4 font-bold hover:bg-blue-700 transition shadow-xl shadow-blue-200 w-full md:w-auto active:transform active:scale-95">
-                                                    {attempt ? "Resume Mock Exam" : "Begin Mock Exam"}
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7-7 7M3 12h18" /></svg>
+                                                <button className="inline-flex items-center justify-center gap-2 rounded-3xl bg-blue-600 text-white px-12 py-5 font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 w-full lg:w-auto active:scale-95 group/btn">
+                                                    {attempt ? "Resume Exam" : "Launch Exam"}
+                                                    <svg className="w-5 h-5 ml-1 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7M3 12h18" /></svg>
                                                 </button>
                                             </form>
                                         )}
@@ -203,16 +232,16 @@ export default async function StudentPage() {
                             );
                         })
                     ) : (
-                        <div className="rounded-[32px] bg-white border border-dashed border-slate-300 p-20 flex flex-col items-center text-center">
-                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                                <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        <div className="rounded-[48px] bg-white border-2 border-dashed border-slate-200 p-24 flex flex-col items-center text-center">
+                            <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mb-8 rotate-12 shadow-inner">
+                                <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900">No Assignments Yet</h3>
-                            <p className="text-slate-500 mt-2">When your instructor assigns a test, it will appear here.</p>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">No Active Mocks</h3>
+                            <p className="text-slate-500 mt-2 font-medium">When your instructor assigns a new test, it will appear here instantly.</p>
                         </div>
                     )}
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

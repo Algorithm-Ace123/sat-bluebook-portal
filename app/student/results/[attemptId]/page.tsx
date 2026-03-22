@@ -188,64 +188,93 @@ export default async function ResultsPage({ params }: { params: { attemptId: str
     const mathItemsTotal = (modStats[2]?.total ?? 0) + (modStats[3]?.total ?? 0);
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20">
-            {/* Nav */}
-            <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
-                <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/student" className="text-slate-600 font-bold hover:text-green-600 transition flex items-center gap-2 text-sm">
-                        ← Back to Dashboard
+        <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900 pb-32">
+            {/* Top Navigation / Breadcrumb */}
+            <nav className="bg-white/80 backdrop-blur-xl border-b sticky top-0 z-50">
+                <div className="max-w-6xl mx-auto px-8 h-20 flex items-center justify-between">
+                    <Link href="/student" className="group flex items-center gap-3 text-slate-500 hover:text-slate-900 transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 border flex items-center justify-center transition-transform group-hover:-translate-x-1">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" /></svg>
+                        </div>
+                        <span className="text-sm font-black uppercase tracking-widest">Dashboard</span>
                     </Link>
-                    <div className="text-sm font-bold text-slate-500 truncate max-w-xs">{test.title}</div>
-                    <div className="w-24" />
+                    <div className="flex items-center gap-4 group">
+                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center transition-transform group-hover:rotate-12">
+                            {/* InlineLogo is dynamic imported in some places, but here we can just use the branding */}
+                            <div className="text-white text-[10px] font-black tracking-tighter">Mock</div>
+                        </div>
+                        <span className="text-xl font-black text-slate-900 tracking-tight">Practice Score Report</span>
+                    </div>
+                    <div className="w-32 hidden sm:block" />
                 </div>
-            </div>
+            </nav>
 
-            {/* Header */}
-            <div className="bg-white border-b overflow-hidden">
-                <div className="max-w-6xl mx-auto px-6 py-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
-                        <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-4">
-                            <h1 className="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">Your Final Score</h1>
-                            <div className="relative">
-                                <span className="text-8xl font-black text-slate-900 leading-none">{totalScaled}</span>
-                                <span className="absolute -bottom-2 -right-12 text-2xl font-black text-slate-300">/ 1600</span>
+            {/* Score Report Hero */}
+            <header className="bg-white border-b relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-50 rounded-full blur-[140px] -translate-y-1/2 translate-x-1/3 opacity-80" />
+                <div className="max-w-6xl mx-auto px-8 py-20 relative z-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-12">
+                        <div className="max-w-2xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-emerald-100">
+                                Results Finalized
                             </div>
-                            <div className="bg-green-50 text-green-700 px-4 py-1.5 rounded-full text-xs font-bold self-center lg:self-start border border-green-100">
-                                Mock Assessment Completed
-                            </div>
-                            <div className="text-xs text-slate-500">
-                                RW route: <b>{rwRoute.toUpperCase()}</b> • Math route: <b>{mathRoute.toUpperCase()}</b>
-                            </div>
+                            <h1 className="text-6xl font-black text-slate-900 tracking-tight leading-none mb-6">
+                                Your Mock <span className="text-emerald-600">Performance.</span>
+                            </h1>
+                            <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-lg">
+                                Review your results for <strong>{testJson.title || "Standard Mock Test"}</strong>. Use these insights to target your preparation for your official SAT date.
+                            </p>
                         </div>
 
-                        <div className="lg:col-span-2 flex flex-col md:flex-row items-center justify-around bg-slate-50 rounded-[32px] p-10 border border-slate-100 gap-8">
-                            <div className="flex flex-col items-center space-y-4">
-                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Reading & Writing</h3>
-                                <SemicircleGauge value={rwScaled} total={800} label="Score" color="#22c55e" />
-                                <div className="text-sm font-medium text-slate-600">{rwCorrectTotal} / {rwItemsTotal} Correct</div>
-                            </div>
-
-                            <div className="w-px h-24 bg-slate-200 hidden md:block" />
-
-                            <div className="flex flex-col items-center space-y-4">
-                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Mathematics</h3>
-                                <SemicircleGauge value={mathScaled} total={800} label="Score" color="#16a34a" />
-                                <div className="text-sm font-medium text-slate-600">{mathCorrectTotal} / {mathItemsTotal} Correct</div>
+                        <div className="shrink-0 flex items-end gap-1">
+                            <span className="text-[140px] font-black text-slate-900 leading-none tracking-tighter">
+                                {totalScaled}
+                            </span>
+                            <div className="flex flex-col items-start mb-6 ml-4">
+                                <span className="text-xl font-black text-slate-300 uppercase tracking-[0.2em]">/ 1600</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Composite Score</span>
                             </div>
                         </div>
                     </div>
+
+                    <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="bg-slate-50 rounded-[44px] p-12 border-2 border-slate-100 flex flex-col sm:flex-row items-center justify-between group hover:border-blue-100 transition-all duration-500 gap-8 shadow-sm hover:shadow-xl hover:shadow-blue-900/5">
+                            <div className="text-center sm:text-left">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Reading & Writing</h3>
+                                <div className="text-8xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors leading-none">{rwScaled}</div>
+                                <div className="text-xs font-bold text-slate-500 mt-4 uppercase tracking-widest opacity-60">Route: {rwRoute.toUpperCase()}</div>
+                                <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{rwCorrectTotal} / {rwItemsTotal} Correct</div>
+                            </div>
+                            <SemicircleGauge value={rwScaled} total={800} label="RW Points" color="#2563eb" />
+                        </div>
+                        <div className="bg-slate-50 rounded-[44px] p-12 border-2 border-slate-100 flex flex-col sm:flex-row items-center justify-between group hover:border-emerald-100 transition-all duration-500 gap-8 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5">
+                            <div className="text-center sm:text-left">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mathematics</h3>
+                                <div className="text-8xl font-black text-slate-900 tracking-tighter group-hover:text-emerald-600 transition-colors leading-none">{mathScaled}</div>
+                                <div className="text-xs font-bold text-slate-500 mt-4 uppercase tracking-widest opacity-60">Route: {mathRoute.toUpperCase()}</div>
+                                <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{mathCorrectTotal} / {mathItemsTotal} Correct</div>
+                            </div>
+                            <SemicircleGauge value={mathScaled} total={800} label="Math Points" color="#10b981" />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </header>
 
             {/* Modules / Breakdown Component */}
-            <ResultsBreakdown
-                testJson={testJson}
-                answersMapList={Array.from(answersMap.entries())}
-                showSolutions={showSolutions}
-                modStats={modStats}
-                rwScaled={rwScaled}
-                mathScaled={mathScaled}
-            />
+            <main className="max-w-6xl mx-auto px-8 mt-24">
+                <div className="flex items-center justify-between mb-12">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Modules Breakdown</h2>
+                    <div className="h-px flex-1 bg-slate-200 mx-10 hidden sm:block opacity-50" />
+                </div>
+                <ResultsBreakdown
+                    testJson={testJson}
+                    answersMapList={Array.from(answersMap.entries())}
+                    showSolutions={showSolutions}
+                    modStats={modStats}
+                    rwScaled={rwScaled}
+                    mathScaled={mathScaled}
+                />
+            </main>
         </div>
     );
 }

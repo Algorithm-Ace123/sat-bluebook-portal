@@ -181,44 +181,52 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
-            {/* Background decorative elements */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-50 rounded-full blur-[120px]" />
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900">
+            {/* Mesh Gradient Aura Background */}
+            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-100/60 rounded-full blur-[160px] animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-100/60 rounded-full blur-[140px]" />
+            <div className="absolute top-[30%] left-[40%] w-[30%] h-[30%] bg-sky-50/80 rounded-full blur-[100px]" />
 
             <div className="w-full max-w-md relative z-10">
-                <div className="mb-10 flex flex-col items-center">
-                    <InlineLogo className="h-16 mb-4" />
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Digital SAT</h1>
-                    <div className="h-1 w-12 bg-blue-500 rounded-full mt-2" />
+                <div className="mb-12 flex flex-col items-center">
+                    <div className="w-20 h-20 bg-slate-900 rounded-[24px] flex items-center justify-center shadow-2xl shadow-slate-300 mb-6 rotate-3 hover:rotate-0 transition-transform duration-500">
+                        <InlineLogo className="h-12" />
+                    </div>
+                    <div className="text-center">
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Digital SAT</h1>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Practice Platform • Authorized Access</p>
+                    </div>
+                    <div className="h-1.5 w-12 bg-blue-600 rounded-full mt-6" />
                 </div>
 
-                <div className="rounded-[32px] bg-white border border-slate-200 shadow-2xl p-10">
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold text-slate-900 uppercase tracking-widest">Student Portal</h2>
-                        <p className="text-sm text-slate-500 mt-1 uppercase tracking-tight font-bold opacity-60">
-                            Enter your credentials to continue.
+                <div className="rounded-[44px] bg-white border border-slate-200 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.06)] p-12 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -translate-y-16 translate-x-16 transition-transform group-hover:scale-110 duration-700" />
+                    
+                    <div className="mb-10 relative z-10">
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Student Portal</h2>
+                        <p className="text-sm text-slate-500 mt-2 font-medium leading-relaxed">
+                            Log in with the official credentials provided by your test administration.
                         </p>
                     </div>
 
-                    <form onSubmit={onSubmit} className="space-y-6">
+                    <form onSubmit={onSubmit} className="space-y-8 relative z-10">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Official Email Address</label>
                             <input
-                                className="mt-2 w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-300"
+                                className="mt-3 w-full rounded-2xl bg-slate-50/50 border-2 border-slate-100 p-5 font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-300"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="name@example.com"
+                                placeholder="candidate@exam.com"
                                 autoComplete="email"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Access Password</label>
                             <input
-                                className="mt-2 w-full rounded-2xl bg-slate-50 border border-slate-200 p-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition placeholder:text-slate-300"
+                                className="mt-3 w-full rounded-2xl bg-slate-50/50 border-2 border-slate-100 p-5 font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-300"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -229,10 +237,11 @@ export default function LoginPage() {
                         </div>
 
                         {err && (
-                            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 font-medium">
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <div className="rounded-2xl border-2 border-red-500 bg-red-50 p-5 text-sm text-red-600 font-bold overflow-hidden relative">
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500" />
+                                <div className="flex items-center gap-3">
+                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     {err}
                                 </div>
@@ -241,7 +250,7 @@ export default function LoginPage() {
 
                         <button
                             disabled={loading}
-                            className="w-full rounded-2xl bg-blue-600 hover:bg-blue-500 text-white p-4 font-bold disabled:opacity-50 transition shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2"
+                            className="w-full rounded-2xl bg-slate-900 hover:bg-black text-white p-5 font-black disabled:opacity-50 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 active:scale-[0.98] group-hover:shadow-slate-300"
                         >
                             {loading ? (
                                 <>
@@ -251,13 +260,18 @@ export default function LoginPage() {
                                     </svg>
                                     Verifying...
                                 </>
-                            ) : "Enter Portal"}
+                            ) : (
+                                <>
+                                    Enter Mock Portal
+                                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7-7 7M3 12h18" /></svg>
+                                </>
+                            )}
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center">
-                        <p className="text-xs text-slate-500 font-medium tracking-tight">
-                            Authorized Access Only • Mock Portal
+                    <div className="mt-12 text-center">
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] opacity-80">
+                            Digital Assessment System v2.1
                         </p>
                     </div>
                 </div>
