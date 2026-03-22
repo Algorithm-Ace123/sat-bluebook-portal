@@ -66,19 +66,26 @@ export function calculateSectionScore(
     const w2 = Math.max(0, t2 - m2Correct);
 
     if (section === "RW") {
-        const wRW = isHard ? (w1 + 0.9 * w2) : (w1 + 1.15 * w2);
+        const wRW = isHard ? (w1 + 0.9 * w2) : (w1 + 1.25 * w2);
         
-        let score = 800 - 12 * wRW - 0.35 * Math.pow(wRW, 2);
+        let score = 800 - 15 * wRW - 0.45 * Math.pow(wRW, 2);
         score = roundTo10(score);
         
+        // Strict cap for Easy route
+        if (!isHard) score = Math.min(600, score);
+        
+        // Ensure no mistake goes unpunished (if not already at cap or floor)
         if (score > 750 && (w1 + w2) > 0) score -= 10;
         
         return clamp(score, 200, 800);
     } else {
-        const wMath = isHard ? (w1 + 0.85 * w2) : (w1 + 1.10 * w2);
+        const wMath = isHard ? (w1 + 0.85 * w2) : (w1 + 1.20 * w2);
         
-        let score = 800 - 14 * wMath - 0.30 * Math.pow(wMath, 2);
+        let score = 800 - 18 * wMath - 0.50 * Math.pow(wMath, 2);
         score = roundTo10(score);
+
+        // Strict cap for Easy route
+        if (!isHard) score = Math.min(580, score);
         
         if (score > 760 && (w1 + w2) > 0) score -= 10;
         

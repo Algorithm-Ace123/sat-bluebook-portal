@@ -411,10 +411,8 @@ export default function ResultsBreakdown({
                                                         
                                                         <button 
                                                             onClick={() => {
-                                                                if (window.confirm("Are you sure you want to see the answer? You won't be able to retry this question anymore.")) {
-                                                                    setRevealAnswers(prev => ({ ...prev, [qid]: true }));
-                                                                    setRetrying(prev => ({ ...prev, [qid]: false }));
-                                                                }
+                                                                setRevealAnswers(prev => ({ ...prev, [qid]: true }));
+                                                                setRetrying(prev => ({ ...prev, [qid]: false }));
                                                             }}
                                                             className="text-xs uppercase tracking-widest font-black flex items-center gap-2 transition px-4 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300 shadow-sm"
                                                         >
