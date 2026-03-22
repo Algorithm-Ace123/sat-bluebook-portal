@@ -101,31 +101,32 @@ export default function ResultsBreakdown({
     return (
         <div className="max-w-6xl mx-auto space-y-16">
 
-            {/* Filters & Module Performance Overview */}
-            <div className="flex flex-col lg:flex-row gap-10 items-start">
-                <div className="flex-1 bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Section Accuracy</div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {["RW M1", "RW M2", "Math M1", "Math M2"].map((name, i) => (
-                            <div key={i} className="flex flex-col items-center bg-slate-50/50 p-5 rounded-3xl border border-slate-100 transition-colors hover:border-blue-100">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{name}</div>
-                                <div className="text-2xl font-black mt-2 text-slate-900">{modStats[i]?.correct ?? 0} / {modStats[i]?.total ?? 0}</div>
-                                <div className="w-full bg-slate-200/50 h-1.5 rounded-full mt-4 overflow-hidden">
-                                    <div className="bg-blue-600 h-full transition-all duration-1000" style={{ width: `${Math.round(((modStats[i]?.correct ?? 0) / Math.max(1, modStats[i]?.total ?? 1)) * 100)}%` }} />
-                                </div>
+            {/* Module Performance Overview */}
+            <div className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Section Accuracy</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {["RW M1", "RW M2", "Math M1", "Math M2"].map((name, i) => (
+                        <div key={i} className="flex flex-col items-center bg-slate-50/50 p-5 rounded-3xl border border-slate-100 transition-colors hover:border-blue-100">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{name}</div>
+                            <div className="text-2xl font-black mt-2 text-slate-900">{modStats[i]?.correct ?? 0} / {modStats[i]?.total ?? 0}</div>
+                            <div className="w-full bg-slate-200/50 h-1.5 rounded-full mt-4 overflow-hidden">
+                                <div className="bg-blue-600 h-full transition-all duration-1000" style={{ width: `${Math.round(((modStats[i]?.correct ?? 0) / Math.max(1, modStats[i]?.total ?? 1)) * 100)}%` }} />
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
+            </div>
 
-                <div className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm shrink-0 w-full lg:w-auto">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Global Filter</div>
-                    <div className="flex flex-wrap gap-3">
+            {/* Global Filter */}
+            <div className="flex justify-center">
+                <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-8">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Global Filter</div>
+                    <div className="flex gap-2">
                         {["ALL", "CORRECT", "INCORRECT", "OMITTED"].map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f as any)}
-                                className={`px-5 py-3 text-[10px] font-black rounded-2xl border-2 transition-all active:scale-95 ${filter === f ? "bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200" : "bg-white text-slate-500 border-slate-100 hover:border-slate-300 hover:bg-slate-50"}`}
+                                className={`px-5 py-2 text-[10px] font-black rounded-xl border-2 transition-all active:scale-95 ${filter === f ? "bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200" : "bg-white text-slate-500 border-slate-50 hover:border-slate-200 hover:bg-slate-50"}`}
                             >
                                 {f}
                             </button>
@@ -287,7 +288,7 @@ export default function ResultsBreakdown({
                                                         }
 
                                                         return (
-                                                            <div key={choice.id} onClick={onClickHandler} className={`p-6 rounded-3xl border-2 transition-all duration-300 relative ${box}`}>
+                                                            <div key={choice.id} onClick={onClickHandler} className={`p-4 rounded-2xl border-2 transition-all duration-300 relative ${box}`}>
                                                                 <div className="flex items-start gap-5">
                                                                     <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center font-black text-sm shrink-0 transition-all ${
                                                                         retrying[qid] ? (
@@ -300,7 +301,7 @@ export default function ResultsBreakdown({
                                                                     }`}>
                                                                         {choice.id}
                                                                     </div>
-                                                                    <div className="flex-1 pt-1.5 text-base font-bold text-slate-700 leading-relaxed">
+                                                                    <div className="flex-1 pt-0.5 text-sm font-bold text-slate-700 leading-relaxed">
                                                                         {renderChoiceContent(choice)}
                                                                         {choice.image && <img src={choice.image.src || choice.image.url} alt={choice.image.alt || ""} className="mt-4 rounded-2xl border border-slate-100 max-w-full" />}
                                                                     </div>
@@ -316,12 +317,12 @@ export default function ResultsBreakdown({
                                                 ) : (
                                                     <div className="space-y-6">
                                                         {retrying[qid] ? (
-                                                            <div className={`p-10 rounded-[32px] border-2 transition-all duration-500 ${retryStatus[qid] === 'correct' ? 'bg-emerald-50 border-emerald-500 shadow-xl' : retryStatus[qid] === 'incorrect' ? 'bg-red-50 border-red-500' : 'bg-white border-slate-200 shadow-sm'}`}>
+                                                            <div className={`p-8 rounded-[32px] border-2 transition-all duration-500 ${retryStatus[qid] === 'correct' ? 'bg-emerald-50 border-emerald-500 shadow-xl' : retryStatus[qid] === 'incorrect' ? 'bg-red-50 border-red-500' : 'bg-white border-slate-200 shadow-sm'}`}>
                                                                 <label className="text-[10px] font-black uppercase tracking-[0.3em] block mb-5 text-slate-400">Response Console</label>
                                                                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
                                                                     <input 
                                                                         type="text" 
-                                                                        className="flex-1 bg-white border-2 border-slate-100 rounded-[20px] px-6 py-4 font-mono text-xl outline-none focus:border-blue-600 focus:ring-8 focus:ring-blue-100 transition-all font-black text-slate-900 shadow-sm"
+                                                                        className="flex-1 bg-white border-2 border-slate-100 rounded-[20px] px-6 py-3 font-mono text-lg outline-none focus:border-blue-600 focus:ring-8 focus:ring-blue-100 transition-all font-black text-slate-900 shadow-sm"
                                                                         placeholder="Input Answer"
                                                                         defaultValue={retryAnswers[qid] || ""}
                                                                         disabled={retryStatus[qid] === "correct"}
@@ -337,12 +338,12 @@ export default function ResultsBreakdown({
                                                                                 const input = (document.activeElement?.tagName === 'INPUT' ? document.activeElement : document.querySelector(`input[defaultValue]`)) as HTMLInputElement;
                                                                                 if (input) handleRetryFRQ(qid, input.value, item.answer?.accepted || []);
                                                                             }}
-                                                                            className="bg-slate-900 hover:bg-black text-white font-black px-10 py-4 rounded-[20px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 active:scale-95"
+                                                                            className="bg-slate-900 hover:bg-black text-white font-black px-8 py-3 rounded-[20px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3 active:scale-95"
                                                                         >
                                                                             Verify Answer
                                                                         </button>
                                                                     ) : (
-                                                                        <div className="bg-emerald-600 text-white font-black px-10 py-4 rounded-[20px] flex items-center justify-center gap-3 cursor-default shadow-xl shadow-emerald-100">
+                                                                        <div className="bg-emerald-600 text-white font-black px-8 py-3 rounded-[20px] flex items-center justify-center gap-3 cursor-default shadow-xl shadow-emerald-100">
                                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
                                                                             Verified
                                                                         </div>
@@ -352,21 +353,21 @@ export default function ResultsBreakdown({
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-6">
-                                                                <div className="p-10 bg-white rounded-[32px] border border-slate-100 shadow-sm">
+                                                                <div className="p-8 bg-white rounded-[32px] border border-slate-100 shadow-sm">
                                                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-4">
                                                                         Your Response
                                                                     </label>
-                                                                    <div className={`text-4xl font-mono font-black ${isCorrect ? "text-emerald-600" : isOmitted ? "text-slate-300" : "text-red-500"}`}>
+                                                                    <div className={`text-3xl font-mono font-black ${isCorrect ? "text-emerald-600" : isOmitted ? "text-slate-300" : "text-red-500"}`}>
                                                                         {answer?.value || <span className="text-slate-200 italic font-sans text-lg tracking-tight">Omitted</span>}
                                                                     </div>
                                                                 </div>
 
                                                                 {showSolutions && (isCorrect || revealAnswers[qid]) && !isCorrect && Array.isArray(item.answer?.accepted) && (
-                                                                    <div className="p-10 bg-emerald-50/50 rounded-[32px] border-2 border-emerald-100 shadow-inner">
+                                                                    <div className="p-8 bg-emerald-50/50 rounded-[32px] border-2 border-emerald-100 shadow-inner">
                                                                         <label className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] block mb-5">
                                                                             Accepted Protocol(s)
                                                                         </label>
-                                                                        <div className="text-2xl font-black text-emerald-800 flex flex-wrap gap-8">
+                                                                        <div className="text-xl font-black text-emerald-800 flex flex-wrap gap-8">
                                                                             {item.answer.accepted.map((acc: any, i: number) => {
                                                                                 const val = String(acc?.value ?? "");
                                                                                 const frac = isFractionString(val) ? toFractionLatex(val) : null;
