@@ -75,6 +75,7 @@ export default function ResultsBreakdown({
     const [retrying, setRetrying] = useState<Record<string, boolean>>({});
     const [retryAnswers, setRetryAnswers] = useState<Record<string, any>>({});
     const [retryStatus, setRetryStatus] = useState<Record<string, "correct" | "incorrect">>({});
+    const [revealAnswers, setRevealAnswers] = useState<Record<string, boolean>>({});
 
     const handleRetryMCQ = (qid: string, choiceId: string, isCorrectMatch: boolean) => {
         setRetryAnswers(prev => ({ ...prev, [qid]: { ...(prev[qid] || {}), [choiceId]: isCorrectMatch } }));
@@ -280,7 +281,8 @@ export default function ResultsBreakdown({
                                                             box = isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50";
                                                             badge = "Your Choice";
                                                         }
-                                                        if (showSolutions && isAnswerKey) {
+                                                        const canRevealMCQ = showSolutions && (isCorrect || revealAnswers[qid]);
+                                                        if (canRevealMCQ && isAnswerKey) {
                                                             if (!isCorrect) {
                                                                 box = "border-green-500 ring-2 ring-green-500 ring-offset-2 bg-white";
                                                                 badge = "Correct Answer";
@@ -367,7 +369,7 @@ export default function ResultsBreakdown({
                                                                 </div>
                                                             </div>
 
-                                                            {showSolutions && !isCorrect && Array.isArray(item.answer?.accepted) && (
+                                                            {showSolutions && (isCorrect || revealAnswers[qid]) && !isCorrect && Array.isArray(item.answer?.accepted) && (
                                                                 <div className="p-6 bg-green-50 rounded-xl border border-green-200">
                                                                     <label className="text-[10px] font-black text-green-600 uppercase tracking-widest block mb-2">
                                                                         Accepted Answer(s)
@@ -393,17 +395,39 @@ export default function ResultsBreakdown({
                                         </div>
                                         
                                         {!isCorrect && (
-                                            <div className="mt-6 flex items-center justify-between">
-                                                <button onClick={() => {
-                                                    setRetrying(prev => ({ ...prev, [qid]: !prev[qid] }));
-                                                    if (!retrying[qid]) {
-                                                        setRetryAnswers(prev => { const n={...prev}; delete n[qid]; return n; });
-                                                        setRetryStatus(prev => { const n={...prev}; delete n[qid]; return n; });
-                                                    }
-                                                }} className={`text-xs uppercase tracking-widest font-black flex items-center gap-2 transition px-4 py-2 rounded-lg border-2 ${retrying[qid] ? "text-red-500 border-red-100 bg-red-50/50 hover:bg-red-100" : "text-slate-500 border-slate-100 bg-slate-50 hover:bg-slate-100"}`}>
-                                                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                                    {retrying[qid] ? "Give Up / Show Original Results" : "Retry This Question"}
-                                                </button>
+                                            <div className="mt-6 flex flex-wrap items-center gap-3">
+                                                {!revealAnswers[qid] ? (
+                                                    <>
+                                                        <button onClick={() => {
+                                                            setRetrying(prev => ({ ...prev, [qid]: !prev[qid] }));
+                                                            if (!retrying[qid]) {
+                                                                setRetryAnswers(prev => { const n={...prev}; delete n[qid]; return n; });
+                                                                setRetryStatus(prev => { const n={...prev}; delete n[qid]; return n; });
+                                                            }
+                                                        }} className={`text-xs uppercase tracking-widest font-black flex items-center gap-2 transition px-4 py-2 rounded-lg border-2 ${retrying[qid] ? "text-red-500 border-red-100 bg-red-50/50 hover:bg-red-100" : "text-slate-500 border-slate-100 bg-slate-50 hover:bg-slate-100"}`}>
+                                                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                            {retrying[qid] ? "Give Up / Show Original Results" : "Retry This Question"}
+                                                        </button>
+                                                        
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (window.confirm("Are you sure you want to see the answer? You won't be able to retry this question anymore.")) {
+                                                                    setRevealAnswers(prev => ({ ...prev, [qid]: true }));
+                                                                    setRetrying(prev => ({ ...prev, [qid]: false }));
+                                                                }
+                                                            }}
+                                                            className="text-xs uppercase tracking-widest font-black flex items-center gap-2 transition px-4 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:border-slate-300 shadow-sm"
+                                                        >
+                                                            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                            Show Answer
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                                                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                        <span className="text-[10px] uppercase font-black tracking-widest text-green-700">Answer Revealed</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         </div>
