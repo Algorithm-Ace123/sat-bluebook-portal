@@ -23,7 +23,7 @@ function loadDesmos(): Promise<void> {
         }
 
         const script = document.createElement("script");
-        script.src = "https://www.desmos.com/api/v1.11/calculator.js?apiKey=pramana";
+        script.src = "https://www.desmos.com/api/v1.11/calculator.js?apiKey=pramana&lang=en";
         script.async = true;
         script.defer = true;
         script.dataset.desmos = "gc";

@@ -55,7 +55,7 @@ export default function DesmosPanel({
             {tab === "graphing" ? (
                 <iframe
                     title="Desmos Graphing"
-                    src="https://www.desmos.com/testing/cb-sat-ap/graphing?lang=el"
+                    src="https://www.desmos.com/testing/cb-sat-ap/graphing?lang=en"
                     className="w-full h-full"
                 />
             ) : (
