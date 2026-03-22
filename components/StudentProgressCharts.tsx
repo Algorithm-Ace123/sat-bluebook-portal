@@ -86,7 +86,7 @@ export default function StudentProgressCharts({ history }: { history: ProgressPo
                         {payload.map((p: any, i: number) => (
                             <div key={i} className="flex items-center justify-between gap-8">
                                 <span className="text-xs font-bold opacity-80">{p.name}:</span>
-                                <span className="text-sm font-black" style={{ color: p.color }}>{p.value}</span>
+                                <span className="text-sm font-black" style={{ color: p.name === "Total" && p.color === "#0f172a" ? "#ffffff" : p.color }}>{p.value}</span>
                             </div>
                         ))}
                     </div>
