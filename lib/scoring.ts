@@ -64,33 +64,27 @@ export function calculateSectionScore(
 
     const w1 = Math.max(0, t1 - m1Correct);
     const w2 = Math.max(0, t2 - m2Correct);
+    const w = w1 + w2; // Total wrong
 
+    if (w === 0) return 800; // Reward perfection
+
+    let score;
     if (section === "RW") {
-        const wRW = isHard ? (w1 + 0.9 * w2) : (w1 + 1.25 * w2);
+        // RW: 54 questions max
+        score = 800 - 10.5 * Math.pow(w, 1.08);
         
-        let score = 800 - 15 * wRW - 0.45 * Math.pow(wRW, 2);
-        score = roundTo10(score);
-        
-        // Strict cap for Easy route
-        if (!isHard) score = Math.min(600, score);
-        
-        // Ensure no mistake goes unpunished (if not already at cap or floor)
-        if (score > 750 && (w1 + w2) > 0) score -= 10;
-        
-        return clamp(score, 200, 800);
+        // Strict cap for Easy route routing (typically caps around 620 on official curves)
+        if (!isHard) score = Math.min(620, score);
     } else {
-        const wMath = isHard ? (w1 + 0.85 * w2) : (w1 + 1.20 * w2);
-        
-        let score = 800 - 18 * wMath - 0.50 * Math.pow(wMath, 2);
-        score = roundTo10(score);
+        // Math: 44 questions max
+        score = 800 - 12.5 * Math.pow(w, 1.08);
 
-        // Strict cap for Easy route
-        if (!isHard) score = Math.min(580, score);
-        
-        if (score > 760 && (w1 + w2) > 0) score -= 10;
-        
-        return clamp(score, 200, 800);
+        // Strict cap for Easy route routing (typically caps around 600 for Math)
+        if (!isHard) score = Math.min(600, score);
     }
+
+    score = roundTo10(score);
+    return clamp(score, 200, 800);
 }
 
 export function calculateTotalScore(
